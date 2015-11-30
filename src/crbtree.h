@@ -98,8 +98,6 @@ CRBNode *c_rbtree_last(CRBTree *t);
 void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n);
 void c_rbtree_remove(CRBTree *t, CRBNode *n);
 
-/* inline shortcuts */
-
 /**
  * c_rbnode_init() - mark a node as unlinked
  * @n:          node to operate on
