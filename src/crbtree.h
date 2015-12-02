@@ -171,6 +171,127 @@ static inline void c_rbtree_remove_init(CRBTree *t, CRBNode *n) {
         }
 }
 
+/**
+ * CRBCompareFunc - compare a node to a key
+ * @t:          tree where the node is linked to
+ * @k:          key to compare
+ * @n:          node to compare
+ *
+ * If you use the tree-traversal helpers (which are optional), you need to
+ * provide this callback so they can compare nodes in a tree to the key you
+ * look for.
+ *
+ * The tree @t is provided as optional context to this callback. The key you
+ * look for is provided as @k, the current node that should be compared to is
+ * provided as @n. This function should work like strcmp(), that is, return -1
+ * if @key orders before @n, 0 if both compare equal, and 1 if it orders after
+ * @n.
+ */
+typedef int (*CRBCompareFunc) (CRBTree *t, void *k, CRBNode *n);
+
+/**
+ * c_rbtree_find_node() - find node
+ * @t:          tree to search through
+ * @f:          comparison function
+ * @k:          key to search for
+ *
+ * This searches through @t for a node that compares equal to @k. The function
+ * @f must be provided by the caller, which is used to compare nodes to @k. See
+ * the documentation of CRBCompareFunc for details.
+ *
+ * If there are multiple entries that compare equal to @k, this will return a
+ * pseudo-randomly picked node. If you need stable lookup functions for trees
+ * where duplicate entries are allowed, you better code your own lookup.
+ *
+ * Return: Pointer to matching node, or NULL.
+ */
+static inline CRBNode *c_rbtree_find_node(CRBTree *t, CRBCompareFunc f, const void *k) {
+        CRBNode *i;
+
+        assert(t);
+        assert(f);
+
+        i = t->root;
+        while (i) {
+                int v = f(t, (void *)k, i);
+                if (v < 0)
+                        i = i->left;
+                else if (v > 0)
+                        i = i->right;
+                else
+                        return i;
+        }
+
+        return NULL;
+}
+
+/**
+ * c_rbtree_find_entry() - find entry
+ * @_t:         tree to search through
+ * @_f:         comparison function
+ * @_k:         key to search for
+ * @_t:         type of the structure that embeds the nodes
+ * @_o:         name of the node-member in type @_t
+ *
+ * This is very similar to c_rbtree_find_node(), but instead of returning a
+ * pointer to the CRBNode, it returns a pointer to the surrounding object. This
+ * object must embed the CRBNode object. The type of the surrounding object
+ * must be given as @_t, and the name of the embedded CRBNode member as @_o.
+ *
+ * See c_rbtree_find_node() for more details.
+ *
+ * Return: Pointer to found entry, NULL if not found.
+ */
+#define c_rbtree_find_entry(_m, _f, _k, _t, _o) \
+        ((_t *)(((char *)c_rbtree_find_node((_m), (_f), (_k)) ?: \
+                (char *)NULL + offsetof(_t, _o)) - offsetof(_t, _o)))
+
+/**
+ * c_rbtree_find_slot() - find slot to insert new node
+ * @t:          tree to search through
+ * @f:          comparison function
+ * @k:          key to search for
+ * @p:          output storage for parent pointer
+ *
+ * This searches through @t just like c_rbtree_find_node() does. However,
+ * instead of returning a pointer to a node that compares equal to @k, this
+ * searches for a slot to insert a node with key @k. A pointer to the slot is
+ * returned, and a pointer to the parent of the slot is stored in @p. Both
+ * can be passed directly to c_rbtree_add(), together with your node to insert.
+ *
+ * If there already is a node in the tree, that compares equal to @k, this will
+ * return NULL and store the conflicting node in @p. In all other cases,
+ * this will return a pointer (non-NULL) to the empty slot to insert the node
+ * at. @p will point to the parent node of that slot.
+ *
+ * If you want trees that allow duplicate nodes, you better code your own
+ * insertion function.
+ *
+ * Return: Pointer to slot to insert node, or NULL on conflicts.
+ */
+static inline CRBNode **c_rbtree_find_slot(CRBTree *t, CRBCompareFunc f, const void *k, CRBNode **p) {
+        CRBNode **i;
+
+        assert(t);
+        assert(f);
+        assert(p);
+
+        i = &t->root;
+        *p = NULL;
+        while (*i) {
+                int v = f(t, (void *)k, *i);
+                *p = *i;
+                if (v < 0)
+                        i = &(*i)->left;
+                else if (v > 0)
+                        i = &(*i)->right;
+                else
+                        return NULL;
+        }
+
+        return i;
+}
+
 #ifdef __cplusplus
 }
 #endif

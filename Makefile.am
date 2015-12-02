@@ -106,6 +106,18 @@ test_basic_LDADD = \
 	libcrbtree-private.la
 
 # ------------------------------------------------------------------------------
+# test-map
+
+default_tests += \
+	test-map
+
+test_map_SOURCES = \
+	src/test-map.c
+
+test_map_LDADD = \
+	libcrbtree-private.la
+
+# ------------------------------------------------------------------------------
 # test suite
 
 check_PROGRAMS += $(default_tests)
