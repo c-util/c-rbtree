@@ -1,17 +1,17 @@
 crbtree - Standalone Red-Black Tree Implementation in Standard ISO-C11
 
 DETAILS:
-        https://github.com/dvdhrm/crbtree
+        https://github.com/bus1/crbtree
 
 BUG REPORTS:
-        https://github.com/dvdhrm/crbtree/issues
+        https://github.com/bus1/crbtree/issues
 
 GIT:
-        git@github.com:dvdhrm/crbtree.git
-        https://github.com/dvdhrm/crbtree.git
+        git@github.com:bus1/crbtree.git
+        https://github.com/bus1/crbtree.git
 
 GITWEB:
-        https://github.com/dvdhrm/crbtree
+        https://github.com/bus1/crbtree
 
 LICENSE:
         LGPLv2.1+ (LICENSE.LGPL2.1)

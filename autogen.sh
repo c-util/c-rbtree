@@ -1,24 +1,29 @@
-#!/bin/sh
-
+#!/bin/bash
 set -e
 
 oldpwd=$(pwd)
 topdir=$(dirname $0)
+
 cd $topdir
-
+mkdir -p ./build/m4/
 autoreconf --force --install --symlink
-
-if [ -f "$topdir/.config.args" ]; then
-        args="$args $(cat $topdir/.config.args)"
-fi
-
 cd $oldpwd
 
-if [ "x$1" = "xc" ]; then
-        $topdir/configure --enable-debug $args
+# https://wiki.debian.org/Multiarch/Tuples
+if [[ "$HOSTTYPE" == "x86_64" ]]; then
+        ARCHITECTURE_TUPLE=x86_64-linux-gnu
+elif [[ "$HOSTTYPE" == "arm" ]]; then
+        ARCHITECTURE_TUPLE=arm-linux-gnueabihf
+else
+        echo "Unknown HOSTTYPE"
+        exit 1
+fi
+
+if [[ "$1" == "b" ]]; then
+        $topdir/configure --prefix=/usr --libdir=/usr/lib/$ARCHITECTURE_TUPLE
         make clean
-elif [ "x$1" = "xl" ]; then
-        $topdir/configure CC=clang $args
+elif [[ "$1" = "c" ]]; then
+        $topdir/configure
         make clean
 else
         echo
@@ -26,6 +31,6 @@ else
         echo "Initialized build system. For a common configuration please run:"
         echo "----------------------------------------------------------------"
         echo
-        echo "$topdir/configure $args"
+        echo "$topdir/configure"
         echo
 fi

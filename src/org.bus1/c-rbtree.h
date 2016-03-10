@@ -1,23 +1,23 @@
 #pragma once
 
 /***
-  This file is part of crbtree. See COPYING for details.
+  This file is part of bus1. See COPYING for details.
 
-  crbtree is free software; you can redistribute it and/or modify it
+  bus1 is free software; you can redistribute it and/or modify it
   under the terms of the GNU Lesser General Public License as published by
   the Free Software Foundation; either version 2.1 of the License, or
   (at your option) any later version.
 
-  crbtree is distributed in the hope that it will be useful, but
+  bus1 is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
   Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with crbtree; If not, see <http://www.gnu.org/licenses/>.
+  along with bus1; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
-/**
+/*
  * Standalone Red-Black-Tree Implementation in Standard ISO-C11
  *
  * This header provides an RB-Tree API, that is fully implemented in ISO-C11
@@ -54,7 +54,7 @@ typedef struct CRBTree CRBTree;
  * Each node in an RB-Tree must embed an CRBNode object. This object contains
  * pointers to its left and right child, which can be freely accessed by the
  * API user at any time. They are NULL, if the node does not have a left/right
- * child 
+ * child.
  *
  * The @__parent_and_color field must never be accessed directly. It encodes
  * the pointer to the parent node, and the color of the node. Use the accessor

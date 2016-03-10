@@ -29,8 +29,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "crbtree.h"
-#include "crbtree-private.h"
+
+#include "org.bus1/c-rbtree.h"
+#include "c-rbtree-private.h"
 
 typedef struct {
         unsigned long key;

@@ -34,8 +34,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "crbtree.h"
-#include "crbtree-private.h"
+
+#include "org.bus1/c-rbtree.h"
+#include "c-rbtree-private.h"
 
 static size_t validate(CRBTree *t) {
         unsigned int i_black, n_black;

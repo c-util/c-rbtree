@@ -1,14 +1,13 @@
 # ------------------------------------------------------------------------------
-# main
+# autotools
 
-ACLOCAL_AMFLAGS = -I m4 ${ACLOCAL_FLAGS}
+SHELL = bash
+ACLOCAL_AMFLAGS = -I build/m4 ${ACLOCAL_FLAGS}
 AM_MAKEFLAGS = --no-print-directory
 AUTOMAKE_OPTIONS = color-tests parallel-tests
 
 GCC_COLORS ?= 'ooh, shiny!'
 export GCC_COLORS
-
-SUBDIRS = .
 
 # remove targets if the command fails
 .DELETE_ON_ERROR:
@@ -16,23 +15,24 @@ SUBDIRS = .
 # keep intermediate files
 .SECONDARY:
 
-# Keep the test-suite.log and Makefile around at all times
+# keep the test-suite.log and Makefile around at all times
 .PRECIOUS: $(TEST_SUITE_LOG) Makefile
 
-CLEANFILES = $(BUILT_SOURCES)
-DISTCLEANFILES =
-EXTRA_DIST =
+pkgincludedir=$(includedir)/org.bus1
+pkgconfiglibdir=$(libdir)/pkgconfig
+
 BUILT_SOURCES =
-lib_LTLIBRARIES =
-noinst_LTLIBRARIES =
-bin_PROGRAMS =
-noinst_PROGRAMS =
-check_PROGRAMS =
-TESTS =
+CLEANFILES = $(BUILT_SOURCES)
+EXTRA_DIST =
+pkginclude_HEADERS =
+pkgconfiglib_DATA =
+noinst_LIBRARIES =
+check_PROGRAMS = $(default_tests)
+TESTS = $(default_tests)
 default_tests =
 
 AM_CPPFLAGS = \
-	-include $(top_builddir)/config.h \
+	-include $(top_builddir)/build/config.h \
 	-I $(top_srcdir)/src \
 	-I $(top_builddir)/src \
 	$(OUR_CPPFLAGS)
@@ -41,46 +41,58 @@ AM_CFLAGS = $(OUR_CFLAGS)
 AM_LDFLAGS = $(OUR_LDFLAGS)
 
 # ------------------------------------------------------------------------------
-# libcrbtree-private (used for our tests, which access internal data)
+# libcrbtree.a
 
-noinst_LTLIBRARIES += \
-	libcrbtree-private.la
+noinst_LIBRARIES += \
+	libcrbtree.a
 
-libcrbtree_private_la_SOURCES = \
-	src/crbtree.h \
-	src/crbtree-private.h \
-	src/crbtree.c
+pkginclude_HEADERS += \
+	src/org.bus1/c-rbtree.h
 
-libcrbtree_private_la_CFLAGS = \
-	$(AM_CFLAGS)
-
-libcrbtree_private_la_CPPFLAGS = \
-	$(AM_CPPFLAGS) \
-	-UNDEBUG
-
-libcrbtree_private_la_LDFLAGS = \
-	$(AM_LDFLAGS)
+libcrbtree_a_SOURCES = \
+	src/libcrbtree.sym \
+	src/c-rbtree-private.h \
+	src/c-rbtree.c
 
 # ------------------------------------------------------------------------------
-# libcrbtree
+# libcrbtree.so.0
 
-lib_LTLIBRARIES += \
-	libcrbtree.la
+libcrbtree.so.0: libcrbtree.a $(top_srcdir)/src/libcrbtree.sym
+	$(AM_V_CCLD)$(CCLD) $(AM_CFLAGS) $(AM_LDFLAGS) \
+	-shared \
+	-Wl,-soname=$@ \
+	-Wl,--version-script=$(top_srcdir)/src/libcrbtree.sym \
+	-Wl,--whole-archive libcrbtree.a -Wl,--no-whole-archive \
+	-o $@
 
-libcrbtree_la_SOURCES = \
-	$(libcrbtree_private_la_SOURCES)
+CLEANFILES += \
+	libcrbtree.so.0
 
-libcrbtree_la_CFLAGS = \
-	$(AM_CFLAGS)
+all-local: libcrbtree.so.0
 
-libcrbtree_la_CPPFLAGS = \
-	$(AM_CPPFLAGS)
+install-exec-hook:
+	$(MKDIR_P) $(DESTDIR)$(libdir)
+	cp libcrbtree.so.0 $(DESTDIR)$(libdir)
+	$(AM_V_LN)ln -sf libcrbtree.so.0 $(DESTDIR)$(libdir)/libcrbtree.so
 
-libcrbtree_la_LDFLAGS = \
-	$(AM_LDFLAGS) \
-	-version-info $(LIBCRBTREE_CURRENT):$(LIBCRBTREE_REVISION):$(LIBCRBTREE_AGE) \
-	-Wl,--version-script=$(top_srcdir)/src/libcrbtree.sym
+uninstall-hook:
+	rm -f $(DESTDIR)$(libdir)/libcrbtree.so.0
 
+%.pc: %.pc.in
+	$(AM_V_GEN)$(SED) \
+		-e 's,@includedir\@,$(includedir),g' \
+		-e 's,@libdir\@,$(libdir),g' \
+		-e 's,@VERSION\@,$(VERSION),g' \
+		$< > $@
+
+pkgconfiglib_DATA += \
+	src/libcrbtree.pc
+
+EXTRA_DIST += \
+	src/libcrbtree.pc.in
+
+CLEANFILES += \
+	src/libcrbtree.pc
 # ------------------------------------------------------------------------------
 # test-api
 
@@ -91,7 +103,7 @@ test_api_SOURCES = \
 	src/test-api.c
 
 test_api_LDADD = \
-	libcrbtree.la # explicitly linked against public library
+	libcrbtree.so.0 # explicitly linked against public library
 
 # ------------------------------------------------------------------------------
 # test-basic
@@ -103,7 +115,7 @@ test_basic_SOURCES = \
 	src/test-basic.c
 
 test_basic_LDADD = \
-	libcrbtree-private.la
+	libcrbtree.a
 
 # ------------------------------------------------------------------------------
 # test-map
@@ -115,10 +127,20 @@ test_map_SOURCES = \
 	src/test-map.c
 
 test_map_LDADD = \
-	libcrbtree-private.la
+	libcrbtree.a
 
 # ------------------------------------------------------------------------------
 # test suite
 
+AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH=$(abs_builddir)
 check_PROGRAMS += $(default_tests)
 TESTS += $(default_tests)
+
+# ------------------------------------------------------------------------------¶
+# check "make install" directory tree
+
+install-tree: all
+	rm -rf $(abs_srcdir)/install-tree
+	$(MAKE) install DESTDIR=$(abs_srcdir)/install-tree
+	tree $(abs_srcdir)/install-tree
+.PHONY: install-tree

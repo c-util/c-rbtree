@@ -26,7 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "crbtree.h"
+
+#include "org.bus1/c-rbtree.h"
 
 static void test_api(void) {
         CRBTree t = {};
