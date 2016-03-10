@@ -27,9 +27,9 @@ EXTRA_DIST =
 pkginclude_HEADERS =
 pkgconfiglib_DATA =
 noinst_LIBRARIES =
-check_PROGRAMS = $(default_tests)
-TESTS = $(default_tests)
+check_PROGRAMS =
 default_tests =
+TESTS =
 
 AM_CPPFLAGS = \
 	-include $(top_builddir)/build/config.h \
