@@ -16,6 +16,9 @@ AC_CONFIG_MACRO_DIR([build/m4])
 AC_CONFIG_HEADERS([build/config.h])
 AC_CONFIG_AUX_DIR([build/build-aux])
 
+# AC_PROG_CC sets default CFLAGS which conflict with our own configuration
+CFLAGS_SAVE=$CFLAGS
+
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
 AM_MAINTAINER_MODE([enable])
@@ -27,7 +30,8 @@ AC_PROG_CC_C99
 AC_PROG_RANLIB
 AC_PROG_SED
 
-AS_IF([! ln --relative --help > /dev/null 2>&1], [AC_MSG_ERROR([*** ln doesn't support --relative ***])])
+CFLAGS=$CFLAGS_SAVE
+
 m4_pattern_forbid([^_?PKG_[A-Z_]+$],[*** pkg.m4 missing, please install pkg-config])
 
 # ------------------------------------------------------------------------------
@@ -47,7 +51,7 @@ OUR_CFLAGS=${OUR_CFLAGS:-$(echo \
         -fdata-sections \
         -fstack-protector \
         -fstack-protector-strong \
-        -fPIE \
+        -fPIC \
         --param=ssp-buffer-size=4 \
         -Wall \
         -Wextra \
