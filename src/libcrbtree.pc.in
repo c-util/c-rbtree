@@ -16,5 +16,5 @@
 Name: libcrbtree
 Description: Red-Black Tree Implementation
 Version: @VERSION@
-Libs: -L$@libdir@ -lcrbtree
-Cflags: -I$@includedir@
+Libs: -L@libdir@ -lcrbtree
+Cflags: -I@includedir@
