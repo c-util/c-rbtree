@@ -86,13 +86,14 @@ uninstall-hook:
 		$< > $@
 
 pkgconfiglib_DATA += \
-	src/libcrbtree.pc
+	src/crbtree.pc
 
 EXTRA_DIST += \
-	src/libcrbtree.pc.in
+	src/crbtree.pc.in
 
 CLEANFILES += \
-	src/libcrbtree.pc
+	src/crbtree.pc
+
 # ------------------------------------------------------------------------------
 # test-api
 
