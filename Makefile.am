@@ -41,42 +41,46 @@ AM_CFLAGS = $(OUR_CFLAGS)
 AM_LDFLAGS = $(OUR_LDFLAGS)
 
 # ------------------------------------------------------------------------------
-# libcrbtree.a
+# library archive
 
 noinst_LIBRARIES += \
 	libcrbtree.a
 
-pkginclude_HEADERS += \
-	src/org.bus1/c-rbtree.h
-
 libcrbtree_a_SOURCES = \
 	src/libcrbtree.sym \
 	src/c-rbtree-private.h \
-	src/c-rbtree.c
+	src/c-rbtree.c \
+	src/org.bus1/c-rbtree.h
 
 # ------------------------------------------------------------------------------
-# libcrbtree.so.0
+# shared library built from archive
+
+all-local: libcrbtree.so.0
+
+pkginclude_HEADERS += \
+	src/org.bus1/c-rbtree.h
 
 libcrbtree.so.0: libcrbtree.a $(top_srcdir)/src/libcrbtree.sym
-	$(AM_V_CCLD)$(CCLD) $(AM_CFLAGS) $(AM_LDFLAGS) \
-	-shared \
+	$(AM_V_CCLD)$(LINK) -shared \
 	-Wl,-soname=$@ \
 	-Wl,--version-script=$(top_srcdir)/src/libcrbtree.sym \
-	-Wl,--whole-archive libcrbtree.a -Wl,--no-whole-archive \
-	-o $@
+	-Wl,--whole-archive libcrbtree.a -Wl,--no-whole-archive
 
 CLEANFILES += \
 	libcrbtree.so.0
 
-all-local: libcrbtree.so.0
+install-exec-local:
+	@echo " $(MKDIR_P) '$(DESTDIR)$(libdir)'"; \
+		$(MKDIR_P) "$(DESTDIR)$(libdir)" || exit 1
+	@echo " $(INSTALL) libcrbtree.so.0 '$(DESTDIR)$(libdir)'"; \
+		$(INSTALL) libcrbtree.so.0 "$(DESTDIR)$(libdir)" || exit $$?
+	@echo " $(LN_S) -f libcrbtree.so.0 '$(DESTDIR)$(libdir)/libcrbtree.so'"; \
+		$(LN_S) -f libcrbtree.so.0 "$(DESTDIR)$(libdir)/libcrbtree.so" || exit $$?
 
-install-exec-hook:
-	$(MKDIR_P) $(DESTDIR)$(libdir)
-	cp libcrbtree.so.0 $(DESTDIR)$(libdir)
-	$(AM_V_LN)ln -sf libcrbtree.so.0 $(DESTDIR)$(libdir)/libcrbtree.so
-
-uninstall-hook:
-	rm -f $(DESTDIR)$(libdir)/libcrbtree.so.0
+uninstall-local:
+	@test ! -d "$(DESTDIR)$(libdir)" || \
+		{ echo " ( cd '$(DESTDIR)$(libdir)' && rm -f libcrbtree.so.0 )"; \
+		  rm -f "$(DESTDIR)$(libdir)/libcrbtree.so.0"; }
 
 %.pc: %.pc.in
 	$(AM_V_GEN)$(SED) \

@@ -21,8 +21,8 @@
 /Makefile.in
 /install-tree
 
-/src/crbtree.pc
 /libcrbtree.so.0
+/src/crbtree.pc
 
 /test-api
 /test-basic
