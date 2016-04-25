@@ -2,16 +2,16 @@
 # versions
 
 AC_PREREQ([2.64])
-AC_INIT([crbtree],
+AC_INIT([c-rbtree],
         [1],
-        [http://www.github.com/bus1/crbtree],
-        [crbtree],
-        [http://www.github.com/bus1/crbtree])
+        [http://www.github.com/c-util/c-rbtree],
+        [c-rbtree],
+        [http://www.github.com/c-util/c-rbtree])
 
 # ------------------------------------------------------------------------------
 # autotools
 
-AC_CONFIG_SRCDIR([src/org.bus1/c-rbtree.h])
+AC_CONFIG_SRCDIR([src/c-rbtree.h])
 AC_CONFIG_MACRO_DIR([build/m4])
 AC_CONFIG_HEADERS([build/config.h])
 AC_CONFIG_AUX_DIR([build/build-aux])

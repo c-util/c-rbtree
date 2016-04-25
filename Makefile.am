@@ -18,13 +18,12 @@ export GCC_COLORS
 # keep the test-suite.log and Makefile around at all times
 .PRECIOUS: $(TEST_SUITE_LOG) Makefile
 
-pkgincludedir=$(includedir)/org.bus1
 pkgconfiglibdir=$(libdir)/pkgconfig
 
 BUILT_SOURCES =
 CLEANFILES = $(BUILT_SOURCES)
 EXTRA_DIST =
-pkginclude_HEADERS =
+include_HEADERS =
 pkgconfiglib_DATA =
 noinst_LIBRARIES =
 check_PROGRAMS =
@@ -50,15 +49,15 @@ libcrbtree_a_SOURCES = \
 	src/libcrbtree.sym \
 	src/c-rbtree-private.h \
 	src/c-rbtree.c \
-	src/org.bus1/c-rbtree.h
+	src/c-rbtree.h
 
 # ------------------------------------------------------------------------------
 # shared library built from archive
 
 all-local: libcrbtree.so.0
 
-pkginclude_HEADERS += \
-	src/org.bus1/c-rbtree.h
+include_HEADERS += \
+	src/c-rbtree.h
 
 libcrbtree.so.0: libcrbtree.a $(top_srcdir)/src/libcrbtree.sym
 	$(AM_V_CCLD)$(LINK) -shared \
@@ -90,13 +89,13 @@ uninstall-local:
 		$< > $@
 
 pkgconfiglib_DATA += \
-	src/crbtree.pc
+	src/c-rbtree.pc
 
 EXTRA_DIST += \
-	src/crbtree.pc.in
+	src/c-rbtree.pc.in
 
 CLEANFILES += \
-	src/crbtree.pc
+	src/c-rbtree.pc
 
 # ------------------------------------------------------------------------------
 # test-api

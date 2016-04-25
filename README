@@ -1,17 +1,17 @@
-crbtree - Standalone Red-Black Tree Implementation in Standard ISO-C11
+c-rbtree - Standalone Red-Black Tree Implementation in Standard ISO-C11
 
 DETAILS:
-        https://github.com/bus1/crbtree
+        https://github.com/c-util/c-rbtree
 
 BUG REPORTS:
-        https://github.com/bus1/crbtree/issues
+        https://github.com/c-util/c-rbtree/issues
 
 GIT:
-        git@github.com:bus1/crbtree.git
-        https://github.com/bus1/crbtree.git
+        git@github.com:c-util/c-rbtree.git
+        https://github.com/c-util/c-rbtree.git
 
 GITWEB:
-        https://github.com/bus1/crbtree
+        https://github.com/c-util/c-rbtree
 
 LICENSE:
         LGPLv2.1+ (LICENSE.LGPL2.1)
