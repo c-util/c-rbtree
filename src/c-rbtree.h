@@ -42,6 +42,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 typedef struct CRBNode CRBNode;
 typedef struct CRBTree CRBTree;
 
