@@ -1,6 +1,6 @@
 Name:           c-rbtree
 Version:        1
-Release:        1
+Release:        2
 Summary:        Red-Black Tree Implementation
 License:        LGPL2+
 URL:            https://github.com/c-util/c-rbtree
@@ -44,5 +44,8 @@ make %{?_smp_mflags}
 %{_libdir}/pkgconfig/c-rbtree.pc
 
 %changelog
+* Fri Apr 29 2016 <kay@redhat.com> 1-2
+- update public header
+
 * Mon Apr 25 2016 <kay@redhat.com> 1-1
 - intial release
