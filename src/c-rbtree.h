@@ -17,6 +17,8 @@
   along with c-rbtree; If not, see <http://www.gnu.org/licenses/>.
 ***/
 
+#include <assert.h>
+
 /*
  * Standalone Red-Black-Tree Implementation in Standard ISO-C11
  *
