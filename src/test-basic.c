@@ -19,10 +19,7 @@
  * Tests for Basic Tree Operations
  * This test does some basic tree operations and verifies their correctness. It
  * validates the RB-Tree invariants after each operation, to guarantee the
- * stability of the tree. The tree operations performed are pseudo-random, and
- * test all code-paths (see coverage report). However, full coverage does not
- * necessarily guarantee absolute testing, so there are also some fixed tests
- * for known special cases.
+ * stability of the tree.
  *
  * For testing purposes, we use the memory address of a node as its key, and
  * order nodes in ascending order.

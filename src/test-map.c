@@ -16,11 +16,9 @@
 ***/
 
 /*
- * Tests Map API
- * This contains tests for the CRBMap API, which wraps CRBTree but provides
- * insertion and lookup helpers. Tests for internal tree consistency are
- * skipped here, as other tests already do that. This just tests for the
- * extensions that CRBMap provides over CRBTree.
+ * RB-Tree based Map
+ * This implements a basic Map between integer keys and objects. It uses the
+ * lookup and insertion helpers, rather than open-coding it.
  */
 
 #undef NDEBUG
