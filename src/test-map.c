@@ -33,6 +33,7 @@
 
 typedef struct {
         unsigned long key;
+        unsigned int marker;
         CRBNode rb;
 } Node;
 
@@ -61,13 +62,14 @@ static void test_map(void) {
         CRBNode **slot, *p;
         CRBTree t = {};
         Node *nodes[2048];
-        unsigned long i;
+        unsigned long i, v;
 
         /* allocate and initialize all nodes */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
                 nodes[i] = malloc(sizeof(*nodes[i]));
                 assert(nodes[i]);
                 nodes[i]->key = i;
+                nodes[i]->marker = 0;
                 c_rbnode_init(&nodes[i]->rb);
         }
 
@@ -87,6 +89,60 @@ static void test_map(void) {
                 assert(nodes[i] == c_rbtree_find_entry(&t, test_compare, (void *)nodes[i]->key, Node, rb));
         }
 
+        /* verify in-order traversal works */
+        i = 0;
+        v = 0;
+        for (p = c_rbtree_first(&t); p; p = c_rbnode_next(p)) {
+                ++i;
+                assert(!node_from_rb(p)->marker);
+                node_from_rb(p)->marker = 1;
+
+                assert(v <= node_from_rb(p)->key);
+                v = node_from_rb(p)->key;
+
+                assert(!c_rbnode_next(p) || p == c_rbnode_prev(c_rbnode_next(p)));
+        }
+        assert(i == sizeof(nodes) / sizeof(*nodes));
+
+        /* verify reverse in-order traversal works */
+        i = 0;
+        v = -1;
+        for (p = c_rbtree_last(&t); p; p = c_rbnode_prev(p)) {
+                ++i;
+                assert(node_from_rb(p)->marker);
+                node_from_rb(p)->marker = 0;
+
+                assert(v >= node_from_rb(p)->key);
+                v = node_from_rb(p)->key;
+        }
+        assert(i == sizeof(nodes) / sizeof(*nodes));
+
+        /* verify post-order traversal works */
+        i = 0;
+        for (p = c_rbtree_first_postorder(&t); p; p = c_rbnode_next_postorder(p)) {
+                ++i;
+                assert(!node_from_rb(p)->marker);
+                assert(!c_rbnode_parent(p) || !node_from_rb(c_rbnode_parent(p))->marker);
+                assert(!p->left || node_from_rb(p->left)->marker);
+                assert(!p->right || node_from_rb(p->right)->marker);
+                node_from_rb(p)->marker = 1;
+
+                assert(!c_rbnode_next_postorder(p) || p == c_rbnode_prev_postorder(c_rbnode_next_postorder(p)));
+        }
+        assert(i == sizeof(nodes) / sizeof(*nodes));
+
+        /* verify pre-order (inverse post-order) traversal works */
+        i = 0;
+        for (p = c_rbtree_last_postorder(&t); p; p = c_rbnode_prev_postorder(p)) {
+                ++i;
+                assert(node_from_rb(p)->marker);
+                assert(!c_rbnode_parent(p) || !node_from_rb(c_rbnode_parent(p))->marker);
+                assert(!p->left || node_from_rb(p->left)->marker);
+                assert(!p->right || node_from_rb(p->right)->marker);
+                node_from_rb(p)->marker = 0;
+        }
+        assert(i == sizeof(nodes) / sizeof(*nodes));
+
         /* shuffle nodes again */
         shuffle(nodes, sizeof(nodes) / sizeof(*nodes));
 
@@ -102,8 +158,10 @@ static void test_map(void) {
         }
 
         /* free nodes again */
-        for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i)
+        for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
+                assert(!nodes[i]->marker);
                 free(nodes[i]);
+        }
 }
 
 int main(int argc, char **argv) {
