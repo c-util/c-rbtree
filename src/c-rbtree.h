@@ -20,12 +20,13 @@
 /*
  * Standalone Red-Black-Tree Implementation in Standard ISO-C11
  *
- * This header provides an RB-Tree API, that is fully implemented in ISO-C11
+ * This library provides an RB-Tree API, that is fully implemented in ISO-C11
  * and has no external dependencies. Furthermore, tree traversal, memory
- * allocations, and key comparisons a fully in control of the API user. The
- * implementation only provides the RB-Tree specific rebalancing and coloring.
+ * allocations, and key comparisons are completely controlled by the API user.
+ * The implementation only provides the RB-Tree specific rebalancing and
+ * coloring.
  *
- * A tree is represented by the "CRBTree" structure. It contains a *singly*
+ * A tree is represented by the "CRBTree" structure. It contains a *single*
  * field, which is a pointer to the root node. If NULL, the tree is empty. If
  * non-NULL, there is at least a single element in the tree.
  *
@@ -155,7 +156,7 @@ static inline _Bool c_rbnode_is_linked(CRBNode *n) {
  * have a parent, NULL is returned. If @n is not linked, @n itself is returned.
  *
  * You should not call this on unlinked or uninitialized nodes! If you do, you
- * better know how its semantics.
+ * better know its semantics.
  *
  * Return: Pointer to parent.
  */
@@ -192,8 +193,8 @@ static inline void c_rbtree_remove_init(CRBTree *t, CRBNode *n) {
  *
  * The tree @t is provided as optional context to this callback. The key you
  * look for is provided as @k, the current node that should be compared to is
- * provided as @n. This function should work like strcmp(), that is, return -1
- * if @key orders before @n, 0 if both compare equal, and 1 if it orders after
+ * provided as @n. This function should work like strcmp(), that is, return <0
+ * if @key orders before @n, 0 if both compare equal, and >0 if it orders after
  * @n.
  */
 typedef int (*CRBCompareFunc) (CRBTree *t, void *k, CRBNode *n);
