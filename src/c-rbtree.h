@@ -233,21 +233,21 @@ static inline CRBNode *c_rbtree_find_node(CRBTree *t, CRBCompareFunc f, const vo
  * @_t:         tree to search through
  * @_f:         comparison function
  * @_k:         key to search for
- * @_t:         type of the structure that embeds the nodes
- * @_o:         name of the node-member in type @_t
+ * @_s:         type of the structure that embeds the nodes
+ * @_m:         name of the node-member in type @_t
  *
  * This is very similar to c_rbtree_find_node(), but instead of returning a
  * pointer to the CRBNode, it returns a pointer to the surrounding object. This
  * object must embed the CRBNode object. The type of the surrounding object
- * must be given as @_t, and the name of the embedded CRBNode member as @_o.
+ * must be given as @_s, and the name of the embedded CRBNode member as @_m.
  *
  * See c_rbtree_find_node() for more details.
  *
  * Return: Pointer to found entry, NULL if not found.
  */
-#define c_rbtree_find_entry(_m, _f, _k, _t, _o) \
-        ((_t *)(((char *)c_rbtree_find_node((_m), (_f), (_k)) ?: \
-                (char *)NULL + offsetof(_t, _o)) - offsetof(_t, _o)))
+#define c_rbtree_find_entry(_t, _f, _k, _s, _m) \
+        ((_s *)(((char *)c_rbtree_find_node((_t), (_f), (_k)) ?: \
+                (char *)NULL + offsetof(_s, _m)) - offsetof(_s, _m)))
 
 /**
  * c_rbtree_find_slot() - find slot to insert new node
