@@ -85,6 +85,64 @@ _public_ CRBNode *c_rbnode_rightmost(CRBNode *n) {
 }
 
 /**
+ * c_rbnode_leftdeepest() - return left-deepest child
+ * @n:          current node, or NULL
+ *
+ * This returns the left-deepest child of @n. If @n is NULL, this will return
+ * NULL. In all other cases, this function returns a valid pointer. That is, if
+ * @n does not have any children, this returns @n.
+ *
+ * The left-deepest child is defined as the deepest child without any left
+ * (grand-...)siblings.
+ *
+ * Worst case runtime (n: number of elements in tree): O(log(n))
+ *
+ * Return: Pointer to left-deepest child, or NULL.
+ */
+_public_ CRBNode *c_rbnode_leftdeepest(CRBNode *n) {
+        if (n) {
+                for (;;) {
+                        if (n->left)
+                                n = n->left;
+                        else if (n->right)
+                                n = n->right;
+                        else
+                                break;
+                }
+        }
+        return n;
+}
+
+/**
+ * c_rbnode_rightdeepest() - return right-deepest child
+ * @n:          current node, or NULL
+ *
+ * This returns the right-deepest child of @n. If @n is NULL, this will return
+ * NULL. In all other cases, this function returns a valid pointer. That is, if
+ * @n does not have any children, this returns @n.
+ *
+ * The right-deepest child is defined as the deepest child without any right
+ * (grand-...)siblings.
+ *
+ * Worst case runtime (n: number of elements in tree): O(log(n))
+ *
+ * Return: Pointer to right-deepest child, or NULL.
+ */
+_public_ CRBNode *c_rbnode_rightdeepest(CRBNode *n) {
+        if (n) {
+                for (;;) {
+                        if (n->right)
+                                n = n->right;
+                        else if (n->left)
+                                n = n->left;
+                        else
+                                break;
+                }
+        }
+        return n;
+}
+
+/**
  * c_rbnode_next() - return next node
  * @n:          current node, or NULL
  *
@@ -137,6 +195,89 @@ _public_ CRBNode *c_rbnode_prev(CRBNode *n) {
 }
 
 /**
+ * c_rbnode_next_postorder() - return next node in post-order
+ * @n:          current node, or NULL
+ *
+ * This returns the next node to @n, based on a left-to-right post-order
+ * traversal. If @n is NULL, the root node, or unlinked, this returns NULL.
+ *
+ * This implements a left-to-right post-order traversal: First visit the left
+ * child of a node, then the right, and lastly the node itself. Children are
+ * traversed recursively.
+ *
+ * This function can be used to implement a left-to-right post-order traversal:
+ *
+ *     for (n = c_rbtree_first_postorder(t); n; n = c_rbnode_next_postorder(n))
+ *             visit(n);
+ *
+ * Worst case runtime (n: number of elements in tree): O(log(n))
+ *
+ * Return: Pointer to next node, or NULL.
+ */
+_public_ CRBNode *c_rbnode_next_postorder(CRBNode *n) {
+        CRBNode *p;
+
+        if (!c_rbnode_is_linked(n))
+                return NULL;
+
+        p = c_rbnode_parent(n);
+        if (p && n == p->left && p->right)
+                return c_rbnode_leftdeepest(p->right);
+
+        return p;
+}
+
+/**
+ * c_rbnode_prev_postorder() - return previous node in post-order
+ * @n:          current node, or NULL
+ *
+ * This returns the previous node to @n, based on a left-to-right post-order
+ * traversal. That is, it is the inverse operation to c_rbnode_next_postorder().
+ * If @n is NULL, the left-deepest node, or unlinked, this returns NULL.
+ *
+ * This function returns the logical previous node in a directed post-order
+ * traversal. That is, it effectively does a pre-order traversal (since a
+ * reverse post-order traversal is a pre-order traversal). This function does
+ * NOT do a right-to-left post-order traversal! In other words, the following
+ * invariant is guaranteed, if c_rbnode_next_postorder(n) is non-NULL:
+ *
+ *     n == c_rbnode_prev_postorder(c_rbnode_next_postorder(n))
+ *
+ * This function can be used to implement a right-to-left pre-order traversal,
+ * using the fact that a reverse post-order traversal is also a valid pre-order
+ * traversal:
+ *
+ *     for (n = c_rbtree_last_postorder(t); n; n = c_rbnode_prev_postorder(n))
+ *             visit(n);
+ *
+ * This would effectively perform a right-to-left pre-order traversal: first
+ * visit a parent, then its right child, then its left child. Both children are
+ * traversed recursively.
+ *
+ * Worst case runtime (n: number of elements in tree): O(log(n))
+ *
+ * Return: Pointer to previous node in post-order, or NULL.
+ */
+_public_ CRBNode *c_rbnode_prev_postorder(CRBNode *n) {
+        CRBNode *p;
+
+        if (!c_rbnode_is_linked(n))
+                return NULL;
+        if (n->right)
+                return n->right;
+        if (n->left)
+                return n->left;
+
+        while ((p = c_rbnode_parent(n))) {
+                if (p->left && n != p->left)
+                        return p->left;
+                n = p;
+        }
+
+        return NULL;
+}
+
+/**
  * c_rbtree_first() - return first node
  * @t:          tree to operate on
  *
@@ -166,6 +307,45 @@ _public_ CRBNode *c_rbtree_first(CRBTree *t) {
 _public_ CRBNode *c_rbtree_last(CRBTree *t) {
         assert(t);
         return c_rbnode_rightmost(t->root);
+}
+
+/**
+ * c_rbtree_first_postorder() - return first node in post-order
+ * @t:          tree to operate on
+ *
+ * This returns the first node of a left-to-right post-order traversal. That
+ * is, it returns the left-deepest leaf. If the tree is empty, this returns
+ * NULL.
+ *
+ * This can also be interpreted as the last node of a right-to-left pre-order
+ * traversal.
+ *
+ * Fixed runtime (n: number of elements in tree): O(log(n))
+ *
+ * Return: Pointer to first node in post-order, or NULL.
+ */
+_public_ CRBNode *c_rbtree_first_postorder(CRBTree *t) {
+        assert(t);
+        return c_rbnode_leftdeepest(t->root);
+}
+
+/**
+ * c_rbtree_last_postorder() - return last node in post-order
+ * @t:          tree to operate on
+ *
+ * This returns the last node of a left-to-right post-order traversal. That is,
+ * it always returns the root node, or NULL if the tree is empty.
+ *
+ * This can also be interpreted as the first node of a right-to-left pre-order
+ * traversal.
+ *
+ * Fixed runtime (n: number of elements in tree): O(1)
+ *
+ * Return: Pointer to last node in post-order, or NULL.
+ */
+_public_ CRBNode *c_rbtree_last_postorder(CRBTree *t) {
+        assert(t);
+        return t->root;
 }
 
 /*

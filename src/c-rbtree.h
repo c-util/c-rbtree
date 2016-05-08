@@ -78,8 +78,12 @@ struct CRBNode {
 
 CRBNode *c_rbnode_leftmost(CRBNode *n);
 CRBNode *c_rbnode_rightmost(CRBNode *n);
+CRBNode *c_rbnode_leftdeepest(CRBNode *n);
+CRBNode *c_rbnode_rightdeepest(CRBNode *n);
 CRBNode *c_rbnode_next(CRBNode *n);
 CRBNode *c_rbnode_prev(CRBNode *n);
+CRBNode *c_rbnode_next_postorder(CRBNode *n);
+CRBNode *c_rbnode_prev_postorder(CRBNode *n);
 
 /**
  * struct CRBTree - Red-Black Tree
@@ -97,6 +101,8 @@ struct CRBTree {
 
 CRBNode *c_rbtree_first(CRBTree *t);
 CRBNode *c_rbtree_last(CRBTree *t);
+CRBNode *c_rbtree_first_postorder(CRBTree *t);
+CRBNode *c_rbtree_last_postorder(CRBTree *t);
 
 void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n);
 void c_rbtree_remove(CRBTree *t, CRBNode *n);

@@ -60,6 +60,15 @@ static void test_api(void) {
         assert(&n == c_rbnode_rightmost(&n));
         assert(!c_rbnode_next(&n));
         assert(!c_rbnode_prev(&n));
+
+        /* postorder traversal */
+
+        assert(!c_rbtree_first_postorder(&t));
+        assert(!c_rbtree_last_postorder(&t));
+        assert(&n == c_rbnode_leftdeepest(&n));
+        assert(&n == c_rbnode_rightdeepest(&n));
+        assert(!c_rbnode_next_postorder(&n));
+        assert(!c_rbnode_prev_postorder(&n));
 }
 
 int main(int argc, char **argv) {
