@@ -4,7 +4,7 @@
 AC_PREREQ([2.64])
 AC_INIT([c-rbtree],
         [1],
-        [http://www.github.com/c-util/c-rbtree],
+        [http://www.github.com/c-util/c-rbtree/issues],
         [c-rbtree],
         [http://www.github.com/c-util/c-rbtree])
 
