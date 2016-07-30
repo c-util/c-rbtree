@@ -370,6 +370,20 @@ static inline void c_rbnode_set_parent(CRBNode *n, CRBNode *p) {
         c_rbnode_set_parent_and_color(n, p, c_rbnode_color(n));
 }
 
+static inline void c_rbtree_store(volatile void *ptr, void *addr) {
+        /*
+         * We use volatile accesses whenever we STORE @left or @right members
+         * of a node. This guarantees that any parallel, lockless lookup gets
+         * to see those stores in the correct order, which itself guarantees
+         * that there're no temporary loops during tree rotation.
+         * Note that you still need to properly synchronize your accesses via
+         * seqlocks, rcu, whatever. We just guarantee that you get *some*
+         * result on a lockless traversal and never run into endless loops, or
+         * undefined behavior.
+         */
+        *(volatile CRBNode **)ptr = addr;
+}
+
 /*
  * This function partially replaces an existing child pointer to a new one. The
  * existing child must be given as @old, the new child as @new. @p must be the
@@ -383,9 +397,9 @@ static inline void c_rbnode_set_parent(CRBNode *n, CRBNode *p) {
 static inline void c_rbtree_swap_child(CRBTree *t, CRBNode *p, CRBNode *old, CRBNode *new) {
         if (p) {
                 if (p->left == old)
-                        p->left = new;
+                        c_rbtree_store(&p->left, new);
                 else
-                        p->right = new;
+                        c_rbtree_store(&p->right, new);
         } else {
                 t->root = new;
         }
@@ -447,8 +461,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                                  * become left child, so we can handle it the
                                  * same as case 5. */
                                 x = n->left;
-                                p->right = n->left;
-                                n->left = p;
+                                c_rbtree_store(&p->right, n->left);
+                                c_rbtree_store(&n->left, p);
                                 if (x)
                                         c_rbnode_set_parent_and_color(x, p, C_RBNODE_BLACK);
                                 c_rbnode_set_parent_and_color(p, n, C_RBNODE_RED);
@@ -466,8 +480,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                          * double red path. As the grandparent is still black,
                          * we're done. */
                         x = p->right;
-                        g->left = x;
-                        p->right = g;
+                        c_rbtree_store(&g->left, x);
+                        c_rbtree_store(&p->right, g);
                         if (x)
                                 c_rbnode_set_parent_and_color(x, g, C_RBNODE_BLACK);
                         c_rbnode_set_parent_and_color(p, gg, C_RBNODE_BLACK);
@@ -487,8 +501,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                 } else {
                         if (n == p->left) {
                                 x = n->right;
-                                p->left = n->right;
-                                n->right = p;
+                                c_rbtree_store(&p->left, n->right);
+                                c_rbtree_store(&n->right, p);
                                 if (x)
                                         c_rbnode_set_parent_and_color(x, p, C_RBNODE_BLACK);
                                 c_rbnode_set_parent_and_color(p, n, C_RBNODE_RED);
@@ -498,8 +512,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         n = NULL;
 
                         x = p->left;
-                        g->right = x;
-                        p->left = g;
+                        c_rbtree_store(&g->right, x);
+                        c_rbtree_store(&p->left, g);
                         if (x)
                                 c_rbnode_set_parent_and_color(x, g, C_RBNODE_BLACK);
                         c_rbnode_set_parent_and_color(p, gg, C_RBNODE_BLACK);
@@ -578,8 +592,9 @@ _public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
         assert(p || l == &t->root);
 
         c_rbnode_set_parent_and_color(n, p, C_RBNODE_RED);
-        n->left = n->right = NULL;
-        *l = n;
+        c_rbtree_store(&n->left, NULL);
+        c_rbtree_store(&n->right, NULL);
+        c_rbtree_store(l, n);
 
         c_rbtree_paint(t, n);
 }
@@ -605,8 +620,8 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                          * gain the additional black node in our path. */
                         g = c_rbnode_parent(p);
                         x = s->left;
-                        p->right = x;
-                        s->left = p;
+                        c_rbtree_store(&p->right, x);
+                        c_rbtree_store(&s->left, p);
                         c_rbnode_set_parent_and_color(x, p, C_RBNODE_BLACK);
                         c_rbnode_set_parent_and_color(s, g, c_rbnode_color(p));
                         c_rbnode_set_parent_and_color(p, s, C_RBNODE_RED);
@@ -637,9 +652,9 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                          * Rotate on parent so the right child of our sibling is
                          * now red, and we can fall through to case 6. */
                         x = y->right;
-                        s->left = y->right;
-                        y->right = s;
-                        p->right = y;
+                        c_rbtree_store(&s->left, y->right);
+                        c_rbtree_store(&y->right, s);
+                        c_rbtree_store(&p->right, y);
                         if (x)
                                 c_rbnode_set_parent_and_color(x, s, C_RBNODE_BLACK);
                         x = s;
@@ -652,8 +667,8 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                  * that was previously on our sibling. */
                 g = c_rbnode_parent(p);
                 y = s->left;
-                p->right = y;
-                s->left = p;
+                c_rbtree_store(&p->right, y);
+                c_rbtree_store(&s->left, p);
                 c_rbnode_set_parent_and_color(x, s, C_RBNODE_BLACK);
                 if (y)
                         c_rbnode_set_parent_and_color(y, p, c_rbnode_color(y));
@@ -665,8 +680,8 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                 if (c_rbnode_is_red(s)) {
                         g = c_rbnode_parent(p);
                         x = s->right;
-                        p->left = x;
-                        s->right = p;
+                        c_rbtree_store(&p->left, x);
+                        c_rbtree_store(&s->right, p);
                         c_rbnode_set_parent_and_color(x, p, C_RBNODE_BLACK);
                         c_rbnode_set_parent_and_color(s, g, C_RBNODE_BLACK);
                         c_rbnode_set_parent_and_color(p, s, C_RBNODE_RED);
@@ -687,9 +702,9 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                         }
 
                         x = y->left;
-                        s->right = y->left;
-                        y->left = s;
-                        p->left = y;
+                        c_rbtree_store(&s->right, y->left);
+                        c_rbtree_store(&y->left, s);
+                        c_rbtree_store(&p->left, y);
                         if (x)
                                 c_rbnode_set_parent_and_color(x, s, C_RBNODE_BLACK);
                         x = s;
@@ -698,8 +713,8 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
 
                 g = c_rbnode_parent(p);
                 y = s->right;
-                p->left = y;
-                s->right = p;
+                c_rbtree_store(&p->left, y);
+                c_rbtree_store(&s->right, p);
                 c_rbnode_set_parent_and_color(x, s, C_RBNODE_BLACK);
                 if (y)
                         c_rbnode_set_parent_and_color(y, p, c_rbnode_color(y));
@@ -820,13 +835,13 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                         p = c_rbnode_parent(s);
 
                         gc = s->right;
-                        p->left = s->right;
-                        s->right = n->right;
+                        c_rbtree_store(&p->left, s->right);
+                        c_rbtree_store(&s->right, n->right);
                         c_rbnode_set_parent(n->right, s);
                 }
 
                 /* node is partially swapped, now remove as in Case 1 */
-                s->left = n->left;
+                c_rbtree_store(&s->left, n->left);
                 c_rbnode_set_parent(n->left, s);
 
                 x = c_rbnode_parent(n);

@@ -134,6 +134,18 @@ test_map_LDADD = \
 	libcrbtree.a
 
 # ------------------------------------------------------------------------------
+# test-parallel
+
+default_tests += \
+	test-parallel
+
+test_parallel_SOURCES = \
+	src/test-parallel.c
+
+test_parallel_LDADD = \
+	libcrbtree.a
+
+# ------------------------------------------------------------------------------
 # test suite
 
 AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH=$(abs_builddir)
