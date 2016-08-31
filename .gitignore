@@ -28,3 +28,4 @@
 /test-basic
 /test-map
 /test-parallel
+/test-posix

@@ -146,6 +146,18 @@ test_parallel_LDADD = \
 	libcrbtree.a
 
 # ------------------------------------------------------------------------------
+# test-posix
+
+default_tests += \
+	test-posix
+
+test_posix_SOURCES = \
+	src/test-posix.c
+
+test_posix_LDADD = \
+	libcrbtree.a
+
+# ------------------------------------------------------------------------------
 # test suite
 
 AM_TESTS_ENVIRONMENT = LD_LIBRARY_PATH=$(abs_builddir)
