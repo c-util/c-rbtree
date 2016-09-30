@@ -50,7 +50,6 @@ OUR_CFLAGS=${OUR_CFLAGS:-$(echo \
         -ffunction-sections \
         -fdata-sections \
         -fstack-protector \
-        -fstack-protector-strong \
         -fPIC \
         --param=ssp-buffer-size=4 \
         -Wall \
@@ -82,7 +81,6 @@ OUR_CFLAGS=${OUR_CFLAGS:-$(echo \
         -Wno-missing-field-initializers \
         -Wno-unused-result \
         -Werror=overflow \
-        -Wdate-time \
         -Wnested-externs)}
 
 OUR_CPPFLAGS=${OUR_CPPFLAGS:-$(echo \
