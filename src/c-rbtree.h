@@ -1,15 +1,6 @@
 #pragma once
 
 /*
- * This file is part of c-rbtree. See COPYING for details.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.
- */
-
-/*
  * Standalone Red-Black-Tree Implementation in Standard ISO-C11
  *
  * This library provides an RB-Tree API, that is fully implemented in ISO-C11

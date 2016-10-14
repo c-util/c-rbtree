@@ -14,5 +14,5 @@ GITWEB:
         https://github.com/c-util/c-rbtree
 
 LICENSE:
-        LGPLv2.1+ (LICENSE.LGPL2.1)
+        Apache Software License 2.0 (LICENSE-APACHE)
         See COPYING for details.

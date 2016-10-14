@@ -1,13 +1,4 @@
 /*
- * This file is part of c-rbtree. See COPYING for details.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.
- */
-
-/*
  * Tests for Basic Tree Operations
  * This test does some basic tree operations and verifies their correctness. It
  * validates the RB-Tree invariants after each operation, to guarantee the

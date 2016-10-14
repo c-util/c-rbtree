@@ -1,13 +1,4 @@
 /*
- * This file is part of c-rbtree. See COPYING for details.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.
- */
-
-/*
  * Tests for Public API
  * This test, unlikely the others, is linked against the real, distributed,
  * shared library. Its sole purpose is to test for symbol availability.

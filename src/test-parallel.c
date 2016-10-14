@@ -1,13 +1,4 @@
 /*
- * This file is part of c-rbtree. See COPYING for details.
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by the
- * Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.
- */
-
-/*
  * Tests Lockless Tree Lookups
  * The RB-Tree implementation supports lockless tree lookups on shared
  * data-structures. While it does not guarantee correct results (you might skip
