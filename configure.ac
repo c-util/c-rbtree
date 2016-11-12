@@ -35,74 +35,6 @@ AC_PROG_LN_S
 m4_pattern_forbid([^_?PKG_[A-Z_]+$],[*** pkg.m4 missing, please install pkg-config])
 
 # ------------------------------------------------------------------------------
-# toolchain
-
-OUR_CFLAGS=${OUR_CFLAGS:-$(echo \
-        -g \
-        -Og \
-        -pipe \
-        -ftrapv \
-        -ffast-math \
-        -fno-common \
-        -fdiagnostics-show-option \
-        -fno-strict-aliasing \
-        -fvisibility=hidden \
-        -ffunction-sections \
-        -fdata-sections \
-        -fstack-protector \
-        -fstack-protector-strong \
-        -fPIC \
-        --param=ssp-buffer-size=4 \
-        -Wall \
-        -Wextra \
-        -Wno-inline \
-        -Wundef \
-        -Wformat=2 \
-        -Wformat-security \
-        -Wformat-nonliteral \
-        -Wsign-compare \
-        -Wmissing-include-dirs \
-        -Wold-style-definition \
-        -Wpointer-arith \
-        -Winit-self \
-        -Wdeclaration-after-statement \
-        -Wfloat-equal \
-        -Wmissing-prototypes \
-        -Wstrict-prototypes \
-        -Wredundant-decls \
-        -Wmissing-declarations \
-        -Wmissing-noreturn \
-        -Wshadow \
-        -Wendif-labels \
-        -Wstrict-aliasing=2 \
-        -Wwrite-strings \
-        -Wno-long-long \
-        -Wno-overlength-strings \
-        -Wno-unused-parameter \
-        -Wno-missing-field-initializers \
-        -Wno-unused-result \
-        -Werror=overflow \
-        -Wdate-time \
-        -Wnested-externs)}
-
-OUR_CPPFLAGS=${OUR_CPPFLAGS:-$(echo \
-        -Wp,-D_FORTIFY_SOURCE=2 \
-        -Wno-typedef-redefinition \
-        -Wno-gnu-variable-sized-type-not-at-end)}
-
-OUR_LDFLAGS=${OUR_LDFLAGS:-$(echo \
-        -Wl,--as-needed \
-        -Wl,--no-undefined \
-        -Wl,--gc-sections \
-        -Wl,-z,relro \
-        -Wl,-z,now \
-        -pie)}
-
-AC_SUBST(OUR_CFLAGS)
-AC_SUBST(OUR_CPPFLAGS)
-AC_SUBST(OUR_LDFLAGS)
-
-# ------------------------------------------------------------------------------
 # report
 
 AC_CONFIG_FILES([Makefile])
@@ -116,7 +48,7 @@ AC_MSG_RESULT([
         includedir:             ${includedir}
         libdir:                 ${libdir}
 
-        CFLAGS:                 ${OUR_CFLAGS} ${CFLAGS}
-        CPPFLAGS:               ${OUR_CPPFLAGS} ${CPPFLAGS}
-        LDFLAGS:                ${OUR_LDFLAGS} ${LDFLAGS}
+        CFLAGS:                 ${CFLAGS}
+        CPPFLAGS:               ${CPPFLAGS}
+        LDFLAGS:                ${LDFLAGS}
 ])
