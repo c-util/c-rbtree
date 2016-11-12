@@ -348,7 +348,7 @@ static inline void c_rbnode_set_parent(CRBNode *n, CRBNode *p) {
         c_rbnode_set_parent_and_color(n, p, c_rbnode_color(n));
 }
 
-static inline void c_rbtree_store(volatile void *ptr, void *addr) {
+static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
         /*
          * We use volatile accesses whenever we STORE @left or @right members
          * of a node. This guarantees that any parallel, lockless lookup gets
