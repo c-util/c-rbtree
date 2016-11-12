@@ -110,6 +110,7 @@ AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 AC_MSG_RESULT([
         $PACKAGE_NAME $VERSION
+
         prefix:                 ${prefix}
         exec_prefix:            ${exec_prefix}
         includedir:             ${includedir}
