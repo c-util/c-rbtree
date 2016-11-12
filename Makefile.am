@@ -23,58 +23,30 @@ EXTRA_DIST =
 AM_CPPFLAGS = \
 	-include $(top_builddir)/build/config.h \
 	-I $(top_srcdir)/src \
-	-I $(top_builddir)/src \
-	-Wp,-D_FORTIFY_SOURCE=2 \
-	-Wno-typedef-redefinition \
-	-Wno-gnu-variable-sized-type-not-at-end
+	-I $(top_builddir)/src
 
 AM_CFLAGS = \
+	-fdata-sections \
+	-ffunction-sections \
+	-fvisibility=hidden \
+	-fno-common \
+	-fPIC \
 	-g \
 	-O2 \
-	-pipe \
-	-ftrapv \
-	-ffast-math \
-	-fno-common \
-	-fdiagnostics-show-option \
-	-fno-strict-aliasing \
-	-fvisibility=hidden \
-	-ffunction-sections \
-	-fdata-sections \
-	-fstack-protector \
-	-fstack-protector-strong \
-	-fPIC \
-	--param=ssp-buffer-size=4 \
 	-Wall \
-	-Wextra \
-	-Wno-inline \
 	-Wundef \
+	-Wextra \
+	-Wshadow \
+	-Winit-self \
 	-Wformat=2 \
 	-Wformat-security \
 	-Wformat-nonliteral \
-	-Wsign-compare \
-	-Wmissing-include-dirs \
-	-Wold-style-definition \
-	-Wpointer-arith \
-	-Winit-self \
-	-Wdeclaration-after-statement \
-	-Wfloat-equal \
 	-Wmissing-prototypes \
-	-Wstrict-prototypes \
-	-Wredundant-decls \
 	-Wmissing-declarations \
-	-Wmissing-noreturn \
-	-Wshadow \
-	-Wendif-labels \
-	-Wstrict-aliasing=2 \
-	-Wwrite-strings \
-	-Wno-long-long \
-	-Wno-overlength-strings \
+	-Wdeclaration-after-statement \
+	-Wredundant-decls \
 	-Wno-unused-parameter \
-	-Wno-missing-field-initializers \
-	-Wno-unused-result \
-	-Werror=overflow \
-	-Wdate-time \
-	-Wnested-externs
+	-Wno-inline
 
 AM_LDFLAGS = \
 	-Wl,--as-needed \
