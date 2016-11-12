@@ -6,9 +6,6 @@ ACLOCAL_AMFLAGS = -I build/m4 ${ACLOCAL_FLAGS}
 AM_MAKEFLAGS = --no-print-directory
 AUTOMAKE_OPTIONS = color-tests parallel-tests
 
-GCC_COLORS ?= 'ooh, shiny!'
-export GCC_COLORS
-
 # remove targets if the command fails
 .DELETE_ON_ERROR:
 
