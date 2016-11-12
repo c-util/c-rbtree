@@ -22,7 +22,7 @@
 /install-tree
 
 /libcrbtree.so.0
-/src/c-rbtree.pc
+/src/libcrbtree.pc
 
 /test-api
 /test-basic
