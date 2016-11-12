@@ -47,7 +47,7 @@ so_list = $(call so_basename,$(SOLIBRARIES))
 # rules. Instead, we have to generate the rules via $(eval ...) based on this
 # template.
 #
-define so_template =
+define so_template
     src/$(1).pc: src/$(1).pc.in
 	$$(AM_V_GEN)$$(SED) \
 		-e 's,@includedir\@,$$(includedir),g' \

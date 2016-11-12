@@ -19,7 +19,7 @@
 .dirstamp
 /Makefile
 /Makefile.in
-/install-tree
+/.travis.yml
 
 /libcrbtree.so.0
 /src/libcrbtree.pc

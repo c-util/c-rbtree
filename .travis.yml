@@ -1,0 +1,12 @@
+dist: trusty
+os: linux
+language: c
+compiler:
+  - gcc
+  - clang
+
+script:
+  - ./autogen.sh
+  - ./configure
+  - make
+  - make check

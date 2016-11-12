@@ -45,6 +45,7 @@ AM_CFLAGS = \
 	-Wmissing-declarations \
 	-Wdeclaration-after-statement \
 	-Wredundant-decls \
+	-Wno-missing-field-initializers \
 	-Wno-unused-parameter \
 	-Wno-inline
 
