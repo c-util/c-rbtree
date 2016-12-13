@@ -5,8 +5,15 @@ compiler:
   - gcc
   - clang
 
+install:
+  - curl -L "https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-linux.zip" -o "ninja-linux.zip"
+  - mkdir -p "$HOME/.local/bin"
+  - unzip "ninja-linux.zip" -d "$HOME/.local/bin"
+  - chmod 755 "$HOME/.local/bin/ninja"
+  - pip3 install meson
+
 script:
-  - ./autogen.sh
-  - ./configure
-  - make
-  - make check
+  - export PATH="$HOME/.local/bin:$PATH"
+  - meson "build"
+  - ninja -C "build"
+  - ninja -C "build" test
