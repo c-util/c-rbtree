@@ -138,7 +138,7 @@ static void shuffle(CRBNode **nodes, size_t n_memb) {
 }
 
 static void test_shuffle(void) {
-        CRBNode *nodes[2048];
+        CRBNode *nodes[512];
         CRBTree t = {};
         unsigned int i, j;
         size_t n;
