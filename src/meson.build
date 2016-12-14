@@ -22,6 +22,9 @@ libcrbtree_shared = shared_library('crbtree',
                                         '-Wl,--no-undefined',
                                         '-Wl,--version-script=@0@'.format(libcrbtree_symfile)
                                    ])
+libcrbtree_dep = declare_dependency(include_directories: include_directories('.'),
+                                    link_with: libcrbtree_private,
+                                    version: meson.project_version())
 mod_pkgconfig.generate(libraries: libcrbtree_shared,
                        version: meson.project_version(),
                        name: 'libcrbtree',
