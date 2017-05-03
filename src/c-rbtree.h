@@ -236,8 +236,8 @@ static inline CRBNode *c_rbtree_find_node(CRBTree *t, CRBCompareFunc f, const vo
  * Return: Pointer to found entry, NULL if not found.
  */
 #define c_rbtree_find_entry(_t, _f, _k, _s, _m) \
-        ((_s *)(((void *)c_rbtree_find_node((_t), (_f), (_k)) ?: \
-                 (void *)NULL + offsetof(_s, _m)) - offsetof(_s, _m)))
+        ((_s *)(void *)(((unsigned long)(void *)c_rbtree_find_node((_t), (_f), (_k)) ?: \
+                         offsetof(_s, _m)) - offsetof(_s, _m)))
 
 /**
  * c_rbtree_find_slot() - find slot to insert new node
