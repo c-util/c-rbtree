@@ -2,31 +2,30 @@
 # target: libcrbtree.so
 #
 
-install_headers('c-rbtree.h')
 libcrbtree_symfile = join_paths(meson.current_source_dir(), 'libcrbtree.sym')
 
 libcrbtree_private = static_library(
         'crbtree-private',
         [
-                'c-rbtree.c'
+                'c-rbtree.c',
         ],
         c_args: [
                 '-fvisibility=hidden',
-                '-fno-common'
+                '-fno-common',
         ],
-        pic: true
+        pic: true,
 )
 
 libcrbtree_shared = shared_library(
         'crbtree',
         objects: libcrbtree_private.extract_all_objects(),
-        install: true,
+        install: not meson.is_subproject(),
         soversion: 0,
         link_depends: libcrbtree_symfile,
         link_args: [
                 '-Wl,--no-undefined',
-                '-Wl,--version-script=@0@'.format(libcrbtree_symfile)
-        ]
+                '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
+        ],
 )
 
 libcrbtree_dep = declare_dependency(
@@ -35,13 +34,17 @@ libcrbtree_dep = declare_dependency(
         version: meson.project_version()
 )
 
-mod_pkgconfig.generate(
-        libraries: libcrbtree_shared,
-        version: meson.project_version(),
-        name: 'libcrbtree',
-        filebase: 'libcrbtree',
-        description: 'Standalone Red-Black Tree Implementation'
-)
+if not meson.is_subproject()
+        install_headers('c-rbtree.h')
+
+        mod_pkgconfig.generate(
+                libraries: libcrbtree_shared,
+                version: meson.project_version(),
+                name: 'libcrbtree',
+                filebase: 'libcrbtree',
+                description: 'Standalone Red-Black Tree Implementation',
+        )
+endif
 
 #
 # target: test-*
