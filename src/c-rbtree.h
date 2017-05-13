@@ -114,6 +114,24 @@ static inline void c_rbnode_init(CRBNode *n) {
 }
 
 /**
+ * c_rbnode_entry() - get parent container of tree node
+ * @_what:              tree node, or NULL
+ * @_t:                 type of parent container
+ * @_m:                 member name of tree node in @_t
+ *
+ * If the tree node @_what is embedded into a surrounding structure, this will
+ * turn the tree node pointer @_what into a pointer to the parent container
+ * (using offsetof(3), or sometimes called container_of(3)).
+ *
+ * If @_what is NULL, this will also return NULL.
+ *
+ * Return: Pointer to parent container, or NULL.
+ */
+#define c_rbnode_entry(_what, _t, _m) \
+        ((_t *)(void *)(((unsigned long)(void *)(_what) ?: \
+                         offsetof(_t, _m)) - offsetof(_t, _m)))
+
+/**
  * c_rbnode_is_linked() - check whether a node is linked
  * @n:          node to check, or NULL
  *
@@ -257,13 +275,12 @@ static inline CRBNode *c_rbtree_find_node(CRBTree *t, CRBCompareFunc f, const vo
  * object must embed the CRBNode object. The type of the surrounding object
  * must be given as @_s, and the name of the embedded CRBNode member as @_m.
  *
- * See c_rbtree_find_node() for more details.
+ * See c_rbtree_find_node() and c_rbnode_entry() for more details.
  *
  * Return: Pointer to found entry, NULL if not found.
  */
 #define c_rbtree_find_entry(_t, _f, _k, _s, _m) \
-        ((_s *)(void *)(((unsigned long)(void *)c_rbtree_find_node((_t), (_f), (_k)) ?: \
-                         offsetof(_s, _m)) - offsetof(_s, _m)))
+        c_rbnode_entry(c_rbtree_find_node((_t), (_f), (_k)), _s, _m)
 
 /**
  * c_rbtree_find_slot() - find slot to insert new node
