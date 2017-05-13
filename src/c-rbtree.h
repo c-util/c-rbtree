@@ -83,6 +83,8 @@ struct CRBTree {
         CRBNode *root;
 };
 
+#define C_RBTREE_INIT {}
+
 CRBNode *c_rbtree_first(CRBTree *t);
 CRBNode *c_rbtree_last(CRBTree *t);
 CRBNode *c_rbtree_first_postorder(CRBTree *t);
@@ -145,6 +147,30 @@ static inline _Bool c_rbnode_is_linked(CRBNode *n) {
  */
 static inline CRBNode *c_rbnode_parent(CRBNode *n) {
         return (CRBNode*)((unsigned long)n->__parent_and_color & ~1UL);
+}
+
+/**
+ * c_rbtree_init() - initialize a new RB-Tree
+ * @t:          tree to operate on
+ *
+ * This initializes a new, empty RB-Tree. An RB-Tree must be initialized before
+ * any other functions are called on it. Alternatively, you can zero its memory
+ * or assign C_RBTREE_INIT.
+ */
+static inline void c_rbtree_init(CRBTree *t) {
+        *t = (CRBTree)C_RBTREE_INIT;
+}
+
+/**
+ * c_rbtree_is_empty() - check whether an RB-tree is empty
+ * @t:          tree to operate on
+ *
+ * This checks whether the passed RB-Tree is empty.
+ *
+ * Return: True if tree is empty, false otherwise.
+ */
+static inline _Bool c_rbtree_is_empty(CRBTree *t) {
+        return !t->root;
 }
 
 /**
