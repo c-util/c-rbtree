@@ -326,6 +326,9 @@ static void test_parallel(void) {
 int main(int argc, char **argv) {
         unsigned int i;
 
+        if (getenv("TEST_VALGRIND"))
+                return 77;
+
         /* we want stable tests, so use fixed seed */
         srand(0xdeadbeef);
 
