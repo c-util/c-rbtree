@@ -12,11 +12,18 @@
 
 #include "c-rbtree.h"
 
-static void test_api(void) {
-        CRBTree t = {};
-        CRBNode n = C_RBNODE_INIT(n);
+typedef struct TestNode {
+        CRBNode rb;
+} TestNode;
 
+static void test_api(void) {
+        CRBTree t = C_RBTREE_INIT;
+        CRBNode *i, *is, n = C_RBNODE_INIT(n);
+        TestNode *ie, *ies;
+
+        assert(c_rbtree_is_empty(&t));
         assert(!c_rbnode_is_linked(&n));
+        assert(!c_rbnode_entry(NULL, TestNode, rb));
 
         /* init, is_linked, add, remove, remove_init */
 
@@ -35,6 +42,9 @@ static void test_api(void) {
         c_rbnode_init(&n);
         assert(!c_rbnode_is_linked(&n));
 
+        c_rbtree_init(&t);
+        assert(c_rbtree_is_empty(&t));
+
         /* first, last, leftmost, rightmost, next, prev */
 
         assert(!c_rbtree_first(&t));
@@ -52,6 +62,31 @@ static void test_api(void) {
         assert(&n == c_rbnode_rightdeepest(&n));
         assert(!c_rbnode_next_postorder(&n));
         assert(!c_rbnode_prev_postorder(&n));
+
+        /* iterators */
+
+        c_rbtree_for_each(i, &t)
+                assert(!i);
+        c_rbtree_for_each_safe(i, is, &t)
+                assert(!i);
+        c_rbtree_for_each_entry(ie, &t, rb)
+                assert(!ie);
+        c_rbtree_for_each_entry_safe(ie, ies, &t, rb)
+                assert(!ie);
+
+        c_rbtree_for_each_postorder(i, &t)
+                assert(!i);
+        c_rbtree_for_each_safe_postorder(i, is, &t)
+                assert(!i);
+        c_rbtree_for_each_entry_postorder(ie, &t, rb)
+                assert(!ie);
+        c_rbtree_for_each_entry_safe_postorder(ie, ies, &t, rb)
+                assert(!ie);
+
+        c_rbtree_for_each_unlink(i, is, &t)
+                assert(!i);
+        c_rbtree_for_each_entry_unlink(ie, ies, &t, rb)
+                assert(!ie);
 }
 
 int main(int argc, char **argv) {
