@@ -217,21 +217,21 @@ static int test_parallel_child(TestContext *ctx) {
 
         /* SIGUSR1 to signal readiness */
         r = raise(SIGUSR1);
-        assert(r >= 0);
+        child_assert(r >= 0);
 
         /* run first part */
         test_child1(ctx);
 
         /* SIGURG to cause re-shuffle */
         r = raise(SIGURG);
-        assert(r >= 0);
+        child_assert(r >= 0);
 
         /* run second part */
         test_child2(ctx);
 
         /* SIGUSR2 to signal end */
         r = raise(SIGUSR2);
-        assert(r >= 0);
+        child_assert(r >= 0);
 
         /* return known exit code to parent */
         return 0xef;
