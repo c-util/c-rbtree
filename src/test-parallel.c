@@ -211,8 +211,15 @@ static void test_parent_step(TestContext *ctx) {
 static int test_parallel_child(TestContext *ctx) {
         int r;
 
-        /* make parent trace us and enter stopped state */
+        /*
+         * Make parent trace us and enter stopped state. In case of EPERM, we
+         * are either ptraced already, or are not privileged to run ptrace.
+         * Exit via 0xdf to signal this condition to our parent.
+         */
         r = ptrace(PTRACE_TRACEME, 0, 0, 0);
+        if (r < 0 && errno == EPERM)
+                return 0xdf;
+
         child_assert(r >= 0);
 
         /* SIGUSR1 to signal readiness */
@@ -237,7 +244,7 @@ static int test_parallel_child(TestContext *ctx) {
         return 0xef;
 }
 
-static void test_parallel(void) {
+static int test_parallel(void) {
         TestContext ctx = {};
         int r, pid, status;
         uint64_t n_instr, n_event;
@@ -311,20 +318,40 @@ static void test_parallel(void) {
                 }
         }
 
-        /* verify expected exit-value of 0xef */
+        /* verify our child exited cleanly */
         assert(r == pid);
         assert(!!WIFEXITED(status));
-        assert(WEXITSTATUS(status) == 0xef);
+
+        /*
+         * 0xdf is signalled if ptrace is not allowed or we are already
+         * ptraced. In this case we skip the test.
+         *
+         * 0xef is signalled on success.
+         *
+         * In any other case something went wobbly and we should fail hard.
+         */
+        switch (WEXITSTATUS(status)) {
+        case 0xef:
+                break;
+        case 0xdf:
+                return 77;
+        default:
+                assert(0);
+                break;
+        }
 
         /* verify we hit all child states */
         assert(n_event & 0x1);
         assert(n_event & 0x2);
         assert(n_event & 0x4);
         assert(n_instr > 0);
+
+        return 0;
 }
 
 int main(int argc, char **argv) {
         unsigned int i;
+        int r;
 
         if (getenv("TEST_VALGRIND"))
                 return 77;
@@ -336,8 +363,11 @@ int main(int argc, char **argv) {
          * The tests are pseudo random; run them multiple times, each run will
          * have different orders and thus different results.
          */
-        for (i = 0; i < 4; ++i)
-                test_parallel();
+        for (i = 0; i < 4; ++i) {
+                r = test_parallel();
+                if (r)
+                        return r;
+        }
 
         return 0;
 }
