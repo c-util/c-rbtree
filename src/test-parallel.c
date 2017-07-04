@@ -353,7 +353,7 @@ int main(int argc, char **argv) {
         unsigned int i;
         int r;
 
-        if (getenv("TEST_VALGRIND"))
+        if (!getenv("CRBTREE_TEST_PTRACE"))
                 return 77;
 
         /* we want stable tests, so use fixed seed */
