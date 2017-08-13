@@ -1,5 +1,15 @@
 c-rbtree - Standalone Red-Black Tree Implementation in Standard ISO-C11
 
+CHANGES WITH 3:
+
+        * Add more helpers. Add both a collection of iteratiors and helpers
+          for initializing a tree and checking if a tree is empty, without
+          explicitly accessing the data structure.
+
+        Contributions from: David Herrmann
+
+        - Berlin, 2017-08-13
+
 CHANGES WITH 2:
 
         * Relicense as ASL-2.0 to make c-rbtree useful for more projects. All

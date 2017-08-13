@@ -1,7 +1,7 @@
 project(
         'c-rbtree',
         'c',
-        version: '2',
+        version: '3',
         license: 'Apache',
         default_options: [
                 'c_std=c11'
