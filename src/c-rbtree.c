@@ -654,7 +654,7 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                 c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(p));
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
                 c_rbtree_swap_child(t, g, p, s);
-        } else /* if (!n || n == p->right) */ { /* same as above, but mirrored */
+        } else /* if (n == p->right) */ { /* same as above, but mirrored */
                 s = p->left;
                 if (c_rbnode_is_red(s)) {
                         g = c_rbnode_parent(p);
