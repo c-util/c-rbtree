@@ -733,7 +733,6 @@ static inline void c_rbtree_rebalance(CRBTree *t, CRBNode *p) {
  */
 _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
         CRBNode *p, *s, *gc, *x, *next = NULL;
-        unsigned long c;
 
         assert(t);
         assert(n);
@@ -777,12 +776,11 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                  * required.
                  */
                 p = c_rbnode_parent(n);
-                c = c_rbnode_flags(n);
                 c_rbtree_swap_child(t, p, n, n->right);
                 if (n->right)
-                        c_rbnode_set_parent_and_flags(n->right, p, c);
+                        c_rbnode_set_parent_and_flags(n->right, p, c_rbnode_flags(n));
                 else
-                        next = (c & C_RBNODE_RED) ? NULL : p;
+                        next = c_rbnode_is_black(n) ? p : NULL;
         } else if (!n->right) {
                 /*
                  * Case 1.1:
@@ -791,9 +789,8 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                  * child).
                  */
                 p = c_rbnode_parent(n);
-                c = c_rbnode_flags(n);
                 c_rbtree_swap_child(t, p, n, n->left);
-                c_rbnode_set_parent_and_flags(n->left, p, c);
+                c_rbnode_set_parent_and_flags(n->left, p, c_rbnode_flags(n));
         } else {
                 /*
                  * Case 2:
@@ -824,13 +821,12 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                 c_rbnode_set_parent_and_flags(n->left, s, c_rbnode_flags(n->left));
 
                 x = c_rbnode_parent(n);
-                c = c_rbnode_flags(n);
                 c_rbtree_swap_child(t, x, n, s);
                 if (gc)
                         c_rbnode_set_parent_and_flags(gc, p, c_rbnode_flags(gc) & ~C_RBNODE_RED);
                 else
                         next = c_rbnode_is_black(s) ? p : NULL;
-                c_rbnode_set_parent_and_flags(s, x, c);
+                c_rbnode_set_parent_and_flags(s, x, c_rbnode_flags(n));
         }
 
         if (next)
