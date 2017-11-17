@@ -367,15 +367,14 @@ static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
 
 /*
  * This function partially replaces an existing child pointer to a new one. The
- * existing child must be given as @old, the new child as @new. @p must be the
- * parent of @old (or NULL if it has no parent).
+ * existing child must be given as @old, the new child as @new.
  * This function ensures that the parent of @old now points to @new. However,
  * it does *NOT* change the parent pointer of @new. The caller must ensure
  * this.
- * If @p is NULL, this function ensures that the root-pointer is adjusted
- * instead (given as @t).
  */
-static inline void c_rbtree_swap_child(CRBTree *t, CRBNode *p, CRBNode *old, CRBNode *new) {
+static inline void c_rbtree_swap_child(CRBTree *t, CRBNode *old, CRBNode *new) {
+        CRBNode *p = c_rbnode_parent(old);
+
         if (p) {
                 if (p->left == old)
                         c_rbtree_store(&p->left, new);
@@ -461,7 +460,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         x = p->right;
                         c_rbtree_store(&g->left, x);
                         c_rbtree_store(&p->right, g);
-                        c_rbtree_swap_child(t, gg, g, p);
+                        c_rbtree_swap_child(t, g, p);
                         if (x)
                                 c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
@@ -493,7 +492,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         x = p->left;
                         c_rbtree_store(&g->right, x);
                         c_rbtree_store(&p->left, g);
-                        c_rbtree_swap_child(t, gg, g, p);
+                        c_rbtree_swap_child(t, g, p);
                         if (x)
                                 c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
@@ -601,7 +600,7 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                         x = s->left;
                         c_rbtree_store(&p->right, x);
                         c_rbtree_store(&s->left, p);
-                        c_rbtree_swap_child(t, g, p, s);
+                        c_rbtree_swap_child(t, p, s);
                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(s) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) | C_RBNODE_RED);
@@ -648,7 +647,7 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                 y = s->left;
                 c_rbtree_store(&p->right, y);
                 c_rbtree_store(&s->left, p);
-                c_rbtree_swap_child(t, g, p, s);
+                c_rbtree_swap_child(t, p, s);
                 c_rbnode_set_parent_and_flags(x, s, c_rbnode_flags(x) & ~C_RBNODE_RED);
                 if (y)
                         c_rbnode_set_parent_and_flags(y, p, c_rbnode_flags(y));
@@ -661,7 +660,7 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                         x = s->right;
                         c_rbtree_store(&p->left, x);
                         c_rbtree_store(&s->right, p);
-                        c_rbtree_swap_child(t, g, p, s);
+                        c_rbtree_swap_child(t, p, s);
                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(s) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) | C_RBNODE_RED);
@@ -694,7 +693,7 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                 y = s->right;
                 c_rbtree_store(&p->left, y);
                 c_rbtree_store(&s->right, p);
-                c_rbtree_swap_child(t, g, p, s);
+                c_rbtree_swap_child(t, p, s);
                 c_rbnode_set_parent_and_flags(x, s, c_rbnode_flags(x) & ~C_RBNODE_RED);
                 if (y)
                         c_rbnode_set_parent_and_flags(y, p, c_rbnode_flags(y));
@@ -776,7 +775,7 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                  * required.
                  */
                 p = c_rbnode_parent(n);
-                c_rbtree_swap_child(t, p, n, n->right);
+                c_rbtree_swap_child(t, n, n->right);
                 if (n->right)
                         c_rbnode_set_parent_and_flags(n->right, p, c_rbnode_flags(n));
                 else
@@ -789,7 +788,7 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                  * child).
                  */
                 p = c_rbnode_parent(n);
-                c_rbtree_swap_child(t, p, n, n->left);
+                c_rbtree_swap_child(t, n, n->left);
                 c_rbnode_set_parent_and_flags(n->left, p, c_rbnode_flags(n));
         } else {
                 /*
@@ -821,7 +820,7 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                 c_rbnode_set_parent_and_flags(n->left, s, c_rbnode_flags(n->left));
 
                 x = c_rbnode_parent(n);
-                c_rbtree_swap_child(t, x, n, s);
+                c_rbtree_swap_child(t, n, s);
                 if (gc)
                         c_rbnode_set_parent_and_flags(gc, p, c_rbnode_flags(gc) & ~C_RBNODE_RED);
                 else
