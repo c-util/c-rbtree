@@ -35,7 +35,7 @@ typedef struct CRBTree CRBTree;
 
 /**
  * struct CRBNode - Node of a Red-Black Tree
- * @__parent_and_color:         internal state
+ * @__parent_and_flags:         internal state
  * @left:                       left child, or NULL
  * @right:                      right child, or NULL
  *
@@ -44,10 +44,9 @@ typedef struct CRBTree CRBTree;
  * API user at any time. They are NULL, if the node does not have a left/right
  * child.
  *
- * The @__parent_and_color field must never be accessed directly. It encodes
+ * The @__parent_and_flags field must never be accessed directly. It encodes
  * the pointer to the parent node, and the color of the node. Use the accessor
- * functions instead. In case of insufficient pointer-alignment, the fields are
- * split.
+ * functions instead.
  *
  * There is no reason to initialize a CRBNode object before linking it.
  * However, if you need a boolean state that tells you whether the node is
@@ -55,13 +54,13 @@ typedef struct CRBTree CRBTree;
  * C_RBNODE_INIT.
  */
 struct CRBNode {
-        alignas(8) CRBNode *__parent_and_color;
+        alignas(8) CRBNode *__parent_and_flags;
         CRBNode *left;
         CRBNode *right;
 };
 
 #define C_RBNODE_FLAG_MASK (0x7UL)
-#define C_RBNODE_INIT(_var) { .__parent_and_color = &(_var) }
+#define C_RBNODE_INIT(_var) { .__parent_and_flags = &(_var) }
 
 CRBNode *c_rbnode_leftmost(CRBNode *n);
 CRBNode *c_rbnode_rightmost(CRBNode *n);
@@ -147,7 +146,7 @@ static inline void c_rbnode_init(CRBNode *n) {
  * Return: Pointer to parent.
  */
 static inline CRBNode *c_rbnode_parent(CRBNode *n) {
-        return (CRBNode*)((unsigned long)n->__parent_and_color & ~C_RBNODE_FLAG_MASK);
+        return (CRBNode*)((unsigned long)n->__parent_and_flags & ~C_RBNODE_FLAG_MASK);
 }
 
 /**
