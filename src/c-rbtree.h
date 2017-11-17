@@ -60,6 +60,7 @@ struct CRBNode {
         CRBNode *right;
 };
 
+#define C_RBNODE_FLAG_MASK (0x7UL)
 #define C_RBNODE_INIT(_var) { .__parent_and_color = &(_var) }
 
 CRBNode *c_rbnode_leftmost(CRBNode *n);
@@ -146,7 +147,7 @@ static inline void c_rbnode_init(CRBNode *n) {
  * Return: Pointer to parent.
  */
 static inline CRBNode *c_rbnode_parent(CRBNode *n) {
-        return (CRBNode*)((unsigned long)n->__parent_and_color & ~1UL);
+        return (CRBNode*)((unsigned long)n->__parent_and_color & ~C_RBNODE_FLAG_MASK);
 }
 
 /**

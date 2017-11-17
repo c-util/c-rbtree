@@ -25,7 +25,7 @@ enum {
 };
 
 static inline unsigned long c_rbnode_color(CRBNode *n) {
-        return (unsigned long)n->__parent_and_color & 1UL;
+        return (unsigned long)n->__parent_and_color & C_RBNODE_FLAG_MASK;
 }
 
 static inline _Bool c_rbnode_is_red(CRBNode *n) {
