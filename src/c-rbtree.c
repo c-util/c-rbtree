@@ -461,11 +461,11 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         x = p->right;
                         c_rbtree_store(&g->left, x);
                         c_rbtree_store(&p->right, g);
+                        c_rbtree_swap_child(t, gg, g, p);
                         if (x)
                                 c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
-                        c_rbtree_swap_child(t, gg, g, p);
                 }
         } else /* if (p == c_rbnode_parent(p)->left) */ { /* same as above, but mirrored */
                 g = c_rbnode_parent(p);
@@ -493,11 +493,11 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         x = p->left;
                         c_rbtree_store(&g->right, x);
                         c_rbtree_store(&p->left, g);
+                        c_rbtree_swap_child(t, gg, g, p);
                         if (x)
                                 c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
-                        c_rbtree_swap_child(t, gg, g, p);
                 }
         }
 
@@ -601,10 +601,10 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                         x = s->left;
                         c_rbtree_store(&p->right, x);
                         c_rbtree_store(&s->left, p);
+                        c_rbtree_swap_child(t, g, p, s);
                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(s) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) | C_RBNODE_RED);
-                        c_rbtree_swap_child(t, g, p, s);
                         s = x;
                 }
 
@@ -648,12 +648,12 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                 y = s->left;
                 c_rbtree_store(&p->right, y);
                 c_rbtree_store(&s->left, p);
+                c_rbtree_swap_child(t, g, p, s);
                 c_rbnode_set_parent_and_flags(x, s, c_rbnode_flags(x) & ~C_RBNODE_RED);
                 if (y)
                         c_rbnode_set_parent_and_flags(y, p, c_rbnode_flags(y));
                 c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(p));
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
-                c_rbtree_swap_child(t, g, p, s);
         } else /* if (n == p->right) */ { /* same as above, but mirrored */
                 s = p->left;
                 if (c_rbnode_is_red(s)) {
@@ -661,10 +661,10 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                         x = s->right;
                         c_rbtree_store(&p->left, x);
                         c_rbtree_store(&s->right, p);
+                        c_rbtree_swap_child(t, g, p, s);
                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(s) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) | C_RBNODE_RED);
-                        c_rbtree_swap_child(t, g, p, s);
                         s = x;
                 }
 
@@ -694,12 +694,12 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                 y = s->right;
                 c_rbtree_store(&p->left, y);
                 c_rbtree_store(&s->right, p);
+                c_rbtree_swap_child(t, g, p, s);
                 c_rbnode_set_parent_and_flags(x, s, c_rbnode_flags(x) & ~C_RBNODE_RED);
                 if (y)
                         c_rbnode_set_parent_and_flags(y, p, c_rbnode_flags(y));
                 c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(p));
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
-                c_rbtree_swap_child(t, g, p, s);
         }
 
         return NULL;
