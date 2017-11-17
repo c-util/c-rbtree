@@ -399,9 +399,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
          *      x: temporary
          */
 
-        /* node is red, so we can access the parent directly */
-        p = n->__parent_and_color;
-
+        p = c_rbnode_parent(n);
         if (!p) {
                 /* Case 1:
                  * We reached the root. Mark it black and be done. As all
@@ -415,8 +413,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                  * change the number of black nodes on any path, nor do we have
                  * multiple consecutive red nodes. */
                 n = NULL;
-        } else if (p == p->__parent_and_color->left) { /* parent is red, so grandparent exists */
-                g = p->__parent_and_color;
+        } else if (p == c_rbnode_parent(p)->left) { /* parent is red, so grandparent exists */
+                g = c_rbnode_parent(p);
                 gg = c_rbnode_parent(g);
                 u = g->right;
 
@@ -466,8 +464,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         c_rbnode_set_parent_and_color(g, p, C_RBNODE_RED);
                         c_rbtree_swap_child(t, gg, g, p);
                 }
-        } else /* if (p == p->__parent_and_color->left) */ { /* same as above, but mirrored */
-                g = p->__parent_and_color;
+        } else /* if (p == c_rbnode_parent(p)->left) */ { /* same as above, but mirrored */
+                g = c_rbnode_parent(p);
                 gg = c_rbnode_parent(g);
                 u = g->left;
 
