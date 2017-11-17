@@ -1,6 +1,6 @@
 #pragma once
 
-/*
+/**
  * Standalone Red-Black-Tree Implementation in Standard ISO-C11
  *
  * This library provides an RB-Tree API, that is fully implemented in ISO-C11
@@ -15,8 +15,8 @@
  *
  * Each node of the tree is represented by the "CRBNode" structure. It has
  * three fields. The @left and @right members can be accessed by the API user
- * directly to traverse the tree. The third member is an implementation detail
- * and encodes the parent pointer and color of the node.
+ * directly to traverse the tree. The third member is a combination of the
+ * parent pointer and a set of flags.
  * API users are required to embed the CRBNode object into their own objects
  * and then use offsetof() (i.e., container_of() and friends) to turn CRBNode
  * pointers into pointers to their own structure.
@@ -38,14 +38,15 @@ typedef struct CRBTree CRBTree;
  * @left:                       left child, or NULL
  * @right:                      right child, or NULL
  *
- * Each node in an RB-Tree must embed an CRBNode object. This object contains
+ * Each node in an RB-Tree must embed a CRBNode object. This object contains
  * pointers to its left and right child, which can be freely accessed by the
  * API user at any time. They are NULL, if the node does not have a left/right
  * child.
  *
  * The @__parent_and_color field must never be accessed directly. It encodes
  * the pointer to the parent node, and the color of the node. Use the accessor
- * functions instead.
+ * functions instead. In case of insufficient pointer-alignment, the fields are
+ * split.
  *
  * There is no reason to initialize a CRBNode object before linking it.
  * However, if you need a boolean state that tells you whether the node is
@@ -363,15 +364,15 @@ static inline CRBNode **c_rbtree_find_slot(CRBTree *t, CRBCompareFunc f, const v
              _iter;                                                                                     \
              _iter = c_rbnode_next(_iter))
 
-#define c_rbtree_for_each_safe(_iter, _safe, _tree)                                                     \
-        for (_iter = c_rbtree_first(_tree), _safe = c_rbnode_next(_iter);                               \
-             _iter;                                                                                     \
-             _iter = _safe, _safe = c_rbnode_next(_safe))
-
 #define c_rbtree_for_each_entry(_iter, _tree, _m)                                                       \
         for (_iter = c_rbnode_entry(c_rbtree_first(_tree), __typeof__(*_iter), _m);                     \
              _iter;                                                                                     \
              _iter = c_rbnode_entry(c_rbnode_next(&_iter->_m), __typeof__(*_iter), _m))
+
+#define c_rbtree_for_each_safe(_iter, _safe, _tree)                                                     \
+        for (_iter = c_rbtree_first(_tree), _safe = c_rbnode_next(_iter);                               \
+             _iter;                                                                                     \
+             _iter = _safe, _safe = c_rbnode_next(_safe))
 
 #define c_rbtree_for_each_entry_safe(_iter, _safe, _tree, _m)                                           \
         for (_iter = c_rbnode_entry(c_rbtree_first(_tree), __typeof__(*_iter), _m),                     \
@@ -385,15 +386,15 @@ static inline CRBNode **c_rbtree_find_slot(CRBTree *t, CRBCompareFunc f, const v
              _iter;                                                                                     \
              _iter = c_rbnode_next_postorder(_iter))                                                    \
 
-#define c_rbtree_for_each_safe_postorder(_iter, _safe, _tree)                                           \
-        for (_iter = c_rbtree_first_postorder(_tree), _safe = c_rbnode_next_postorder(_iter);           \
-             _iter;                                                                                     \
-             _iter = _safe, _safe = c_rbnode_next_postorder(_safe))
-
 #define c_rbtree_for_each_entry_postorder(_iter, _tree, _m)                                             \
         for (_iter = c_rbnode_entry(c_rbtree_first_postorder(_tree), __typeof__(*_iter), _m);           \
              _iter;                                                                                     \
              _iter = c_rbnode_entry(c_rbnode_next_postorder(&_iter->_m), __typeof__(*_iter), _m))
+
+#define c_rbtree_for_each_safe_postorder(_iter, _safe, _tree)                                           \
+        for (_iter = c_rbtree_first_postorder(_tree), _safe = c_rbnode_next_postorder(_iter);           \
+             _iter;                                                                                     \
+             _iter = _safe, _safe = c_rbnode_next_postorder(_safe))
 
 #define c_rbtree_for_each_entry_safe_postorder(_iter, _safe, _tree, _m)                                                 \
         for (_iter = c_rbnode_entry(c_rbtree_first_postorder(_tree), __typeof__(*_iter), _m),                           \
