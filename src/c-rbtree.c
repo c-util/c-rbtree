@@ -24,10 +24,20 @@
  */
 
 #include <assert.h>
+#include <stdalign.h>
 #include <stddef.h>
 
 #include "c-rbtree-private.h"
 #include "c-rbtree.h"
+
+/*
+ * We use alignas(8) to enforce 64bit alignment of structure fields. This is
+ * according to ISO-C11, so we rely on the compiler to implement this. However,
+ * at the same time we don't want to exceed native malloc() alignment on target
+ * platforms. Hence, we also verify against max_align_t.
+ */
+static_assert(alignof(CRBNode) <= alignof(max_align_t), "Invalid RBNode alignment");
+static_assert(alignof(CRBNode) >= 8, "Invalid CRBNode alignment");
 
 /**
  * c_rbnode_leftmost() - return leftmost child
