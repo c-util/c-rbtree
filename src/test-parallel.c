@@ -51,10 +51,15 @@
 #include "c-rbtree-private.h"
 
 typedef struct {
+        CRBNode rb;
+        bool visited;
+} TestNode;
+
+typedef struct {
         size_t mapsize;
         char *map;
         CRBTree *tree;
-        CRBNode *node_mem;
+        TestNode *node_mem;
         CRBNode **nodes;
         CRBNode **cache;
         size_t n_nodes;
@@ -79,15 +84,12 @@ static void shuffle(CRBNode **nodes, size_t n_memb) {
         }
 }
 
-static void toggle(CRBNode *n, bool set) {
-        /*
-         * Bit 0x2 is unused in __parent_and_color so we use it as marker for
-         * cycle detection.
-         */
-        if (set)
-                n->__parent_and_color = (void *)((unsigned long)n->__parent_and_color | 0x2UL);
-        else
-                n->__parent_and_color = (void *)((unsigned long)n->__parent_and_color & ~0x2UL);
+static void toggle_visit(CRBNode *n, bool set) {
+        c_rbnode_entry(n, TestNode, rb)->visited = set;
+}
+
+static bool fetch_visit(CRBNode *n) {
+        return c_rbnode_entry(n, TestNode, rb)->visited;
 }
 
 static void test_child1(TestContext *ctx) {
@@ -125,7 +127,7 @@ static void test_parent_start(TestContext *ctx) {
 
         ctx->n_nodes = 32;
         ctx->mapsize = sizeof(CRBTree);
-        ctx->mapsize += ctx->n_nodes * sizeof(CRBNode);
+        ctx->mapsize += ctx->n_nodes * sizeof(TestNode);
         ctx->mapsize += ctx->n_nodes * sizeof(CRBNode*);
         ctx->mapsize += ctx->n_nodes * sizeof(CRBNode*);
 
@@ -138,7 +140,7 @@ static void test_parent_start(TestContext *ctx) {
         ctx->cache = (void *)(ctx->nodes + ctx->n_nodes);
 
         for (i = 0; i < ctx->n_nodes; ++i) {
-                ctx->nodes[i] = &ctx->node_mem[i];
+                ctx->nodes[i] = &ctx->node_mem[i].rb;
                 c_rbnode_init(ctx->nodes[i]);
         }
 
@@ -174,7 +176,7 @@ static void test_parent_step(TestContext *ctx) {
 
         while (n) {
                 /* verify that we haven't visited @n, yet */
-                assert(!((unsigned long)n->__parent_and_color & 0x2UL));
+                assert(!fetch_visit(n));
 
                 /* verify @n is a valid node */
                 for (i = 0; i < ctx->n_nodes; ++i)
@@ -184,11 +186,11 @@ static void test_parent_step(TestContext *ctx) {
 
                 /* pre-order traversal and marker for cycle detection */
                 if (n->left) {
-                        toggle(n, true);
+                        toggle_visit(n, true);
                         ctx->cache[i_level++] = n;
                         n = n->left;
                 } else if (n->right) {
-                        toggle(n, true);
+                        toggle_visit(n, true);
                         ctx->cache[i_level++] = n;
                         n = n->right;
                 } else {
@@ -200,7 +202,7 @@ static void test_parent_step(TestContext *ctx) {
                                 }
                                 --i_level;
                                 n = p;
-                                toggle(n, false);
+                                toggle_visit(n, false);
                         }
                         if (i_level == 0)
                                 break;
