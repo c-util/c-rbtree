@@ -242,7 +242,7 @@ static void test_posix(void) {
         /* remove all nodes (in different order) */
         ts = now();
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i)
-                c_rbtree_remove_init(&t, &nodes[i]->rb);
+                c_rbnode_unlink_init(&nodes[i]->rb);
         ts_c4 = now() - ts;
 
         ts = now();

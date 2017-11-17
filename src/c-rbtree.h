@@ -33,6 +33,12 @@ extern "C" {
 typedef struct CRBNode CRBNode;
 typedef struct CRBTree CRBTree;
 
+/* implementation detail */
+#define C_RBNODE_RED                    (0x1UL)
+#define C_RBNODE_ROOT                   (0x2UL)
+#define C_RBNODE_UNUSED3                (0x4UL)
+#define C_RBNODE_FLAG_MASK              (0x7UL)
+
 /**
  * struct CRBNode - Node of a Red-Black Tree
  * @__parent_and_flags:         internal state
@@ -54,13 +60,12 @@ typedef struct CRBTree CRBTree;
  * C_RBNODE_INIT.
  */
 struct CRBNode {
-        alignas(8) CRBNode *__parent_and_flags;
+        alignas(8) unsigned long __parent_and_flags;
         CRBNode *left;
         CRBNode *right;
 };
 
-#define C_RBNODE_FLAG_MASK (0x7UL)
-#define C_RBNODE_INIT(_var) { .__parent_and_flags = &(_var) }
+#define C_RBNODE_INIT(_var) { .__parent_and_flags = (unsigned long)&(_var) }
 
 CRBNode *c_rbnode_leftmost(CRBNode *n);
 CRBNode *c_rbnode_rightmost(CRBNode *n);
@@ -70,6 +75,9 @@ CRBNode *c_rbnode_next(CRBNode *n);
 CRBNode *c_rbnode_prev(CRBNode *n);
 CRBNode *c_rbnode_next_postorder(CRBNode *n);
 CRBNode *c_rbnode_prev_postorder(CRBNode *n);
+
+void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n);
+void c_rbnode_unlink(CRBNode *n);
 
 /**
  * struct CRBTree - Red-Black Tree
@@ -146,7 +154,9 @@ static inline void c_rbnode_init(CRBNode *n) {
  * Return: Pointer to parent.
  */
 static inline CRBNode *c_rbnode_parent(CRBNode *n) {
-        return (CRBNode*)((unsigned long)n->__parent_and_flags & ~C_RBNODE_FLAG_MASK);
+        return (n->__parent_and_flags & C_RBNODE_ROOT) ?
+                        NULL :
+                        (void *)(n->__parent_and_flags & ~C_RBNODE_FLAG_MASK);
 }
 
 /**
@@ -167,6 +177,22 @@ static inline CRBNode *c_rbnode_parent(CRBNode *n) {
  */
 static inline _Bool c_rbnode_is_linked(CRBNode *n) {
         return n && c_rbnode_parent(n) != n;
+}
+
+/**
+ * c_rbnode_unlink_init() - safely remove node from tree and reinitialize it
+ * @n:          node to remove, or NULL
+ *
+ * This is almost the same as c_rbnode_unlink(), but extends it slightly, to be
+ * more convenient to use in many cases:
+ *  - if @n is unlinked or NULL, this is a no-op
+ *  - @n is reinitialized after being removed
+ */
+static inline void c_rbnode_unlink_init(CRBNode *n) {
+        if (c_rbnode_is_linked(n)) {
+                c_rbnode_unlink(n);
+                c_rbnode_init(n);
+        }
 }
 
 /**
@@ -194,9 +220,11 @@ static inline _Bool c_rbtree_is_empty(CRBTree *t) {
 }
 
 /**
- * c_rbtree_remove_init() - safely remove node from tree and reinitialize it
+ * c_rbtree_remove_init() - safely remove node and reinitialize (DEPRECATED)
  * @t:          tree to operate on
  * @n:          node to remove, or NULL
+ *
+ * DEPRECATED: Use c_rbnode_unlink_init().
  *
  * This is almost the same as c_rbtree_remove(), but extends it slightly, to be
  * more convenient to use in many cases:

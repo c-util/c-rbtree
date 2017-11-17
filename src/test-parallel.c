@@ -108,7 +108,7 @@ static void test_child2(TestContext *ctx) {
 
         for (i = 0; i < ctx->n_nodes; ++i) {
                 child_assert(c_rbnode_is_linked(ctx->nodes[i]));
-                c_rbtree_remove_init(ctx->tree, ctx->nodes[i]);
+                c_rbnode_unlink_init(ctx->nodes[i]);
         }
 }
 

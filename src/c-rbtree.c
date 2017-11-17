@@ -341,16 +341,6 @@ _public_ CRBNode *c_rbtree_last_postorder(CRBTree *t) {
         return t->root;
 }
 
-/*
- * Set the flags and parent of a node. This should be treated as a simple
- * assignment of the 'flags' and 'parent' fields of the node. No other magic is
- * applied. But since both fields share its backing memory, this helper
- * function is provided.
- */
-static inline void c_rbnode_set_parent_and_flags(CRBNode *n, CRBNode *p, unsigned long flags) {
-        n->__parent_and_flags = (CRBNode*)((unsigned long)p | flags);
-}
-
 static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
         /*
          * We use volatile accesses whenever we STORE @left or @right members
@@ -366,13 +356,79 @@ static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
 }
 
 /*
- * This function partially replaces an existing child pointer to a new one. The
- * existing child must be given as @old, the new child as @new.
- * This function ensures that the parent of @old now points to @new. However,
- * it does *NOT* change the parent pointer of @new. The caller must ensure
- * this.
+ * Set the flags and parent of a node. This should be treated as a simple
+ * assignment of the 'flags' and 'parent' fields of the node. No other magic is
+ * applied. But since both fields share its backing memory, this helper
+ * function is provided.
  */
-static inline void c_rbnode_swap_child(CRBTree *t, CRBNode *old, CRBNode *new) {
+static inline void c_rbnode_set_parent_and_flags(CRBNode *n, CRBNode *p, unsigned long flags) {
+        n->__parent_and_flags = (unsigned long)p | flags;
+}
+
+/*
+ * Nodes in the tree do not separately store a point to the tree root. That is,
+ * there is no way to access the tree-root in O(1) given an arbitrary node.
+ * Fortunately, this is usually not required. The only situation where this is
+ * needed is when rotating the root-node itself.
+ *
+ * In case of the root node, c_rbnode_parent() returns NULL. We use this fact
+ * to re-use the parent-pointer storage of the root node to point to the
+ * CRBTree root. This way, we can rotate the root-node (or add/remove it)
+ * without requiring a separate tree-root pointer.
+ *
+ * However, to keep the tree-modification functions simple, we hide this detail
+ * whenever possible. This means, c_rbnode_parent() will continue to return
+ * NULL, and tree modifications will boldly reset the pointer to NULL on
+ * rotation. Hence, the only way to retain this pointer is to call
+ * c_rbnode_pop_root() on a possible root-node before rotating. This returns
+ * NULL if the node in question is not the root node. Otherwise, it returns the
+ * tree-root, and clears the pointer/flag from the node in question. This way,
+ * you can perform tree operations as usual. Afterwards, use
+ * c_rbnode_push_root() to restore the root-pointer on any possible new root.
+ */
+static inline CRBTree *c_rbnode_pop_root(CRBNode *n) {
+        CRBTree *t = NULL;
+
+        if (c_rbnode_is_root(n)) {
+                t = c_rbnode_raw(n);
+                n->__parent_and_flags = c_rbnode_flags(n) & ~C_RBNODE_ROOT;
+        }
+
+        return t;
+}
+
+/* counter-part to c_rbnode_pop_root() */
+static inline CRBTree *c_rbnode_push_root(CRBNode *n, CRBTree *t) {
+        if (t) {
+                if (n)
+                        n->__parent_and_flags = (unsigned long)t
+                                                | c_rbnode_flags(n)
+                                                | C_RBNODE_ROOT;
+                c_rbtree_store(&t->root, n);
+        }
+
+        return NULL;
+}
+
+/*
+ * This function partially swaps a child node with another one. That is, this
+ * function changes the parent of @old to point to @new. That is, you use it
+ * when swapping @old with @new, to update the parent's left/right pointer.
+ * This function does *NOT* perform a full swap, nor does it touch any 'parent'
+ * pointer.
+ *
+ * The sole purpose of this function is to shortcut left/right conditionals
+ * like this:
+ *
+ *     if (old == old->parent->left)
+ *             old->parent->left = new;
+ *     else
+ *             old->parent->right = new;
+ *
+ * That's it! If @old is the root node, this will do nothing. The caller must
+ * employ c_rbnode_pop_root() and c_rbnode_push_root().
+ */
+static inline void c_rbnode_swap_child(CRBNode *old, CRBNode *new) {
         CRBNode *p = c_rbnode_parent(old);
 
         if (p) {
@@ -380,13 +436,12 @@ static inline void c_rbnode_swap_child(CRBTree *t, CRBNode *old, CRBNode *new) {
                         c_rbtree_store(&p->left, new);
                 else
                         c_rbtree_store(&p->right, new);
-        } else {
-                t->root = new;
         }
 }
 
-static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
+static inline CRBNode *c_rbtree_paint_one(CRBNode *n) {
         CRBNode *p, *g, *gg, *u, *x;
+        CRBTree *t;
 
         /*
          * Paint a single node according to RB-Tree rules. The node must
@@ -407,7 +462,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                  * We reached the root. Mark it black and be done. As all
                  * leaf-paths share the root, the ratio of black nodes on each
                  * path stays the same. */
-                c_rbnode_set_parent_and_flags(n, p, c_rbnode_flags(n) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(n, c_rbnode_raw(n), c_rbnode_flags(n) & ~C_RBNODE_RED);
                 n = NULL;
         } else if (c_rbnode_is_black(p)) {
                 /* Case 2:
@@ -428,7 +483,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                          * the grandparent. */
                         c_rbnode_set_parent_and_flags(p, g, c_rbnode_flags(p) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(u, g, c_rbnode_flags(u) & ~C_RBNODE_RED);
-                        c_rbnode_set_parent_and_flags(g, gg, c_rbnode_flags(g) | C_RBNODE_RED);
+                        c_rbnode_set_parent_and_flags(g, c_rbnode_raw(g), c_rbnode_flags(g) | C_RBNODE_RED);
                         n = g;
                 } else {
                         /* parent is red, uncle is black */
@@ -439,7 +494,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                                  * become left child, so we can handle it the
                                  * same as case 5. */
                                 x = n->left;
-                                c_rbtree_store(&p->right, n->left);
+                                c_rbtree_store(&p->right, x);
                                 c_rbtree_store(&n->left, p);
                                 if (x)
                                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
@@ -458,13 +513,15 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                          * double red path. As the grandparent is still black,
                          * we're done. */
                         x = p->right;
+                        t = c_rbnode_pop_root(g);
                         c_rbtree_store(&g->left, x);
                         c_rbtree_store(&p->right, g);
-                        c_rbnode_swap_child(t, g, p);
+                        c_rbnode_swap_child(g, p);
                         if (x)
                                 c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
+                        c_rbnode_push_root(p, t);
                 }
         } else /* if (p == c_rbnode_parent(p)->left) */ { /* same as above, but mirrored */
                 g = c_rbnode_parent(p);
@@ -474,7 +531,7 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                 if (u && c_rbnode_is_red(u)) {
                         c_rbnode_set_parent_and_flags(p, g, c_rbnode_flags(p) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(u, g, c_rbnode_flags(u) & ~C_RBNODE_RED);
-                        c_rbnode_set_parent_and_flags(g, gg, c_rbnode_flags(g) | C_RBNODE_RED);
+                        c_rbnode_set_parent_and_flags(g, c_rbnode_raw(g), c_rbnode_flags(g) | C_RBNODE_RED);
                         n = g;
                 } else {
                         if (n == p->left) {
@@ -490,25 +547,57 @@ static inline CRBNode *c_rbtree_paint_one(CRBTree *t, CRBNode *n) {
                         n = NULL;
 
                         x = p->left;
+                        t = c_rbnode_pop_root(g);
                         c_rbtree_store(&g->right, x);
                         c_rbtree_store(&p->left, g);
-                        c_rbnode_swap_child(t, g, p);
+                        c_rbnode_swap_child(g, p);
                         if (x)
                                 c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
+                        c_rbnode_push_root(p, t);
                 }
         }
 
         return n;
 }
 
-static inline void c_rbtree_paint(CRBTree *t, CRBNode *n) {
-        assert(t);
+static inline void c_rbtree_paint(CRBNode *n) {
         assert(n);
 
         while (n)
-                n = c_rbtree_paint_one(t, n);
+                n = c_rbtree_paint_one(n);
+}
+
+/**
+ * c_rbnode_link() - link node into tree
+ * @p:          parent node to link under
+ * @l:          left/right slot of @p to link at
+ * @n:          node to add
+ *
+ * This links @n into an tree underneath another node. The caller must provide
+ * the exact spot where to link the node. That is, the caller must traverse the
+ * tree based on their search order. Once they hit a leaf where to insert the
+ * node, call this function to link it and rebalance the tree.
+ *
+ * For this to work, the caller must provide a pointer to the parent node. If
+ * the tree might be empty, you must resort to c_rbtree_add().
+ *
+ * In most cases you are better off using c_rbtree_add(). See there for details
+ * how tree-insertion works.
+ */
+_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
+        assert(p);
+        assert(l);
+        assert(n);
+        assert(l == &p->left || l == &p->right);
+
+        c_rbnode_set_parent_and_flags(n, p, C_RBNODE_RED);
+        c_rbtree_store(&n->left, NULL);
+        c_rbtree_store(&n->right, NULL);
+        c_rbtree_store(l, n);
+
+        c_rbtree_paint(n);
 }
 
 /**
@@ -572,13 +661,18 @@ _public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
         c_rbnode_set_parent_and_flags(n, p, C_RBNODE_RED);
         c_rbtree_store(&n->left, NULL);
         c_rbtree_store(&n->right, NULL);
-        c_rbtree_store(l, n);
 
-        c_rbtree_paint(t, n);
+        if (p)
+                c_rbtree_store(l, n);
+        else
+                c_rbnode_push_root(n, t);
+
+        c_rbtree_paint(n);
 }
 
-static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n) {
+static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
         CRBNode *s, *x, *y, *g;
+        CRBTree *t;
 
         /*
          * Rebalance tree after a node was removed. This happens only if you
@@ -596,14 +690,16 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                          * We have a red node as sibling. Rotate it onto our
                          * side so we can later on turn it black. This way, we
                          * gain the additional black node in our path. */
+                        t = c_rbnode_pop_root(p);
                         g = c_rbnode_parent(p);
                         x = s->left;
                         c_rbtree_store(&p->right, x);
                         c_rbtree_store(&s->left, p);
-                        c_rbnode_swap_child(t, p, s);
+                        c_rbnode_swap_child(p, s);
                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(s) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) | C_RBNODE_RED);
+                        c_rbnode_push_root(s, t);
                         s = x;
                 }
 
@@ -643,27 +739,31 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                  * The right child of our sibling is red. Rotate left and flip
                  * colors, which gains us an additional black node in our path,
                  * that was previously on our sibling. */
+                t = c_rbnode_pop_root(p);
                 g = c_rbnode_parent(p);
                 y = s->left;
                 c_rbtree_store(&p->right, y);
                 c_rbtree_store(&s->left, p);
-                c_rbnode_swap_child(t, p, s);
+                c_rbnode_swap_child(p, s);
                 c_rbnode_set_parent_and_flags(x, s, c_rbnode_flags(x) & ~C_RBNODE_RED);
                 if (y)
                         c_rbnode_set_parent_and_flags(y, p, c_rbnode_flags(y));
                 c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(p));
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
+                c_rbnode_push_root(s, t);
         } else /* if (n == p->right) */ { /* same as above, but mirrored */
                 s = p->left;
                 if (c_rbnode_is_red(s)) {
+                        t = c_rbnode_pop_root(p);
                         g = c_rbnode_parent(p);
                         x = s->right;
                         c_rbtree_store(&p->left, x);
                         c_rbtree_store(&s->right, p);
-                        c_rbnode_swap_child(t, p, s);
+                        c_rbnode_swap_child(p, s);
                         c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(s) & ~C_RBNODE_RED);
                         c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) | C_RBNODE_RED);
+                        c_rbnode_push_root(s, t);
                         s = x;
                 }
 
@@ -689,51 +789,48 @@ static inline CRBNode *c_rbtree_rebalance_one(CRBTree *t, CRBNode *p, CRBNode *n
                         s = y;
                 }
 
+                t = c_rbnode_pop_root(p);
                 g = c_rbnode_parent(p);
                 y = s->right;
                 c_rbtree_store(&p->left, y);
                 c_rbtree_store(&s->right, p);
-                c_rbnode_swap_child(t, p, s);
+                c_rbnode_swap_child(p, s);
                 c_rbnode_set_parent_and_flags(x, s, c_rbnode_flags(x) & ~C_RBNODE_RED);
                 if (y)
                         c_rbnode_set_parent_and_flags(y, p, c_rbnode_flags(y));
                 c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(p));
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
+                c_rbnode_push_root(s, t);
         }
 
         return NULL;
 }
 
-static inline void c_rbtree_rebalance(CRBTree *t, CRBNode *p) {
+static inline void c_rbnode_rebalance(CRBNode *p) {
         CRBNode *n = NULL;
 
-        assert(t);
         assert(p);
 
         do {
-                n = c_rbtree_rebalance_one(t, p, n);
+                n = c_rbnode_rebalance_one(p, n);
                 p = n ? c_rbnode_parent(n) : NULL;
         } while (p);
 }
 
 /**
- * c_rbtree_remove() - remove node from tree
- * @t:          tree to operate one
+ * c_rbnode_unlink() - remove node from tree
  * @n:          node to remove
  *
  * This removes the given node from its tree. Once unlinked, the tree is
  * rebalanced.
- * The caller *must* ensure that the given tree is actually the tree it is
- * linked on. Otherwise, behavior is undefined.
  *
- * This does *NOT* reset @n to being unlinked (for performance reason, this
- * function *never* modifies @n at all). If you need this, use
- * c_rbtree_remove_init().
+ * This does *NOT* reset @n to being unlinked. If you need this, use
+ * c_rbtree_unlink_init().
  */
-_public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
-        CRBNode *p, *s, *gc, *x, *next = NULL;
+_public_ void c_rbnode_unlink(CRBNode *n) {
+        CRBNode *p, *s, *gc, *next = NULL;
+        CRBTree *t;
 
-        assert(t);
         assert(n);
         assert(c_rbnode_is_linked(n));
 
@@ -774,12 +871,13 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                  * turning the red child black, and thus no rebalancing is
                  * required.
                  */
-                p = c_rbnode_parent(n);
-                c_rbnode_swap_child(t, n, n->right);
+                t = c_rbnode_pop_root(n);
+                c_rbnode_swap_child(n, n->right);
                 if (n->right)
-                        c_rbnode_set_parent_and_flags(n->right, p, c_rbnode_flags(n));
+                        c_rbnode_set_parent_and_flags(n->right, c_rbnode_parent(n), c_rbnode_flags(n->right) & ~C_RBNODE_RED);
                 else
-                        next = c_rbnode_is_black(n) ? p : NULL;
+                        next = c_rbnode_is_black(n) ? c_rbnode_parent(n) : NULL;
+                c_rbnode_push_root(n->right, t);
         } else if (!n->right) {
                 /*
                  * Case 1.1:
@@ -787,9 +885,10 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                  * it as mirrored case of Case 1 (i.e., replace the node by its
                  * child).
                  */
-                p = c_rbnode_parent(n);
-                c_rbnode_swap_child(t, n, n->left);
-                c_rbnode_set_parent_and_flags(n->left, p, c_rbnode_flags(n));
+                t = c_rbnode_pop_root(n);
+                c_rbnode_swap_child(n, n->left);
+                c_rbnode_set_parent_and_flags(n->left, c_rbnode_parent(n), c_rbnode_flags(n->left) & ~C_RBNODE_RED);
+                c_rbnode_push_root(n->left, t);
         } else {
                 /*
                  * Case 2:
@@ -810,7 +909,7 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                         p = c_rbnode_parent(s);
 
                         gc = s->right;
-                        c_rbtree_store(&p->left, s->right);
+                        c_rbtree_store(&p->left, gc);
                         c_rbtree_store(&s->right, n->right);
                         c_rbnode_set_parent_and_flags(n->right, s, c_rbnode_flags(n->right));
                 }
@@ -819,15 +918,39 @@ _public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
                 c_rbtree_store(&s->left, n->left);
                 c_rbnode_set_parent_and_flags(n->left, s, c_rbnode_flags(n->left));
 
-                x = c_rbnode_parent(n);
-                c_rbnode_swap_child(t, n, s);
+                t = c_rbnode_pop_root(n);
+                c_rbnode_swap_child(n, s);
                 if (gc)
                         c_rbnode_set_parent_and_flags(gc, p, c_rbnode_flags(gc) & ~C_RBNODE_RED);
                 else
                         next = c_rbnode_is_black(s) ? p : NULL;
-                c_rbnode_set_parent_and_flags(s, x, c_rbnode_flags(n));
+                if (c_rbnode_is_red(n))
+                        c_rbnode_set_parent_and_flags(s, c_rbnode_parent(n), c_rbnode_flags(s) | C_RBNODE_RED);
+                else
+                        c_rbnode_set_parent_and_flags(s, c_rbnode_parent(n), c_rbnode_flags(s) & ~C_RBNODE_RED);
+                c_rbnode_push_root(s, t);
         }
 
         if (next)
-                c_rbtree_rebalance(t, next);
+                c_rbnode_rebalance(next);
+}
+
+/**
+ * c_rbtree_remove() - remove node from tree (DEPRECATED)
+ * @t:          tree to operate on
+ * @n:          node to remove
+ *
+ * DEPRECATED: Use c_rbnode_unlink() instead.
+ *
+ * This removes the given node from its tree. Once unlinked, the tree is
+ * rebalanced.
+ * The caller *must* ensure that the given tree is actually the tree it is
+ * linked on. Otherwise, behavior is undefined.
+ *
+ * This does *NOT* reset @n to being unlinked (for performance reason, this
+ * function *never* modifies @n at all). If you need this, use
+ * c_rbtree_remove_init().
+ */
+_public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
+        c_rbnode_unlink(n);
 }

@@ -17,3 +17,9 @@ global:
 local:
        *;
 };
+
+LIBCRBTREE_2 {
+global:
+        c_rbnode_link;
+        c_rbnode_unlink;
+} LIBCRBTREE_1;
