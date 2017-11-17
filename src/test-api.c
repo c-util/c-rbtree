@@ -83,9 +83,9 @@ static void test_api(void) {
         c_rbtree_for_each_entry_safe_postorder(ie, ies, &t, rb)
                 assert(!ie);
 
-        c_rbtree_for_each_unlink(i, is, &t)
+        c_rbtree_for_each_safe_postorder_unlink(i, is, &t)
                 assert(!i);
-        c_rbtree_for_each_entry_unlink(ie, ies, &t, rb)
+        c_rbtree_for_each_entry_safe_postorder_unlink(ie, ies, &t, rb)
                 assert(!ie);
 }
 

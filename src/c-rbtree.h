@@ -403,12 +403,12 @@ static inline CRBNode **c_rbtree_find_slot(CRBTree *t, CRBCompareFunc f, const v
              _iter = _safe,                                                                                             \
              _safe = _safe ? c_rbnode_entry(c_rbnode_next_postorder(&_safe->_m), __typeof__(*_iter), _m) : NULL)
 
-#define c_rbtree_for_each_unlink(_iter, _safe, _tree)                                                   \
+#define c_rbtree_for_each_safe_postorder_unlink(_iter, _safe, _tree)                                    \
         for (_iter = c_rbtree_first_postorder(_tree), _safe = c_rbnode_next_postorder(_iter);           \
              _iter ? ((*_iter = (CRBNode)C_RBNODE_INIT(*_iter)), 1) : (((_tree)->root = NULL), 0);      \
              _iter = _safe, _safe = c_rbnode_next_postorder(_safe))                                     \
 
-#define c_rbtree_for_each_entry_unlink(_iter, _safe, _tree, _m)                                                         \
+#define c_rbtree_for_each_entry_safe_postorder_unlink(_iter, _safe, _tree, _m)                                          \
         for (_iter = c_rbnode_entry(c_rbtree_first_postorder(_tree), __typeof__(*_iter), _m),                           \
              _safe = _iter ? c_rbnode_entry(c_rbnode_next_postorder(&_iter->_m), __typeof__(*_iter), _m) : NULL;        \
              _iter ? ((_iter->_m = (CRBNode)C_RBNODE_INIT(_iter->_m)), 1) : (((_tree)->root = NULL), 0);                \

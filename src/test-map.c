@@ -236,7 +236,7 @@ static void test_map(void) {
 
         /* remove all nodes via unlink-helper */
         i = 0;
-        c_rbtree_for_each_unlink(p, safe_p, &t) {
+        c_rbtree_for_each_safe_postorder_unlink(p, safe_p, &t) {
                 ++i;
                 assert(!c_rbnode_is_linked(p));
         }
@@ -252,7 +252,7 @@ static void test_map(void) {
 
         /* remove all nodes via entry-unlink-helper */
         i = 0;
-        c_rbtree_for_each_entry_unlink(n, safe_n, &t, rb) {
+        c_rbtree_for_each_entry_safe_postorder_unlink(n, safe_n, &t, rb) {
                 ++i;
                 assert(!c_rbnode_is_linked(&n->rb));
         }
