@@ -134,6 +134,22 @@ static inline void c_rbnode_init(CRBNode *n) {
                          offsetof(_t, _m)) - offsetof(_t, _m)))
 
 /**
+ * c_rbnode_parent() - return parent pointer
+ * @n           node to access
+ *
+ * This returns a pointer to the parent of the given node @n. If @n does not
+ * have a parent, NULL is returned. If @n is not linked, @n itself is returned.
+ *
+ * You should not call this on unlinked or uninitialized nodes! If you do, you
+ * better know its semantics.
+ *
+ * Return: Pointer to parent.
+ */
+static inline CRBNode *c_rbnode_parent(CRBNode *n) {
+        return (CRBNode*)((unsigned long)n->__parent_and_color & ~1UL);
+}
+
+/**
  * c_rbnode_is_linked() - check whether a node is linked
  * @n:          node to check, or NULL
  *
@@ -150,23 +166,7 @@ static inline void c_rbnode_init(CRBNode *n) {
  * Return: true if the node is linked, false if not.
  */
 static inline _Bool c_rbnode_is_linked(CRBNode *n) {
-        return n && n->__parent_and_color != n;
-}
-
-/**
- * c_rbnode_parent() - return parent pointer
- * @n           node to access
- *
- * This returns a pointer to the parent of the given node @n. If @n does not
- * have a parent, NULL is returned. If @n is not linked, @n itself is returned.
- *
- * You should not call this on unlinked or uninitialized nodes! If you do, you
- * better know its semantics.
- *
- * Return: Pointer to parent.
- */
-static inline CRBNode *c_rbnode_parent(CRBNode *n) {
-        return (CRBNode*)((unsigned long)n->__parent_and_color & ~1UL);
+        return n && c_rbnode_parent(n) != n;
 }
 
 /**
