@@ -818,12 +818,10 @@ static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
 static inline void c_rbnode_rebalance(CRBNode *p) {
         CRBNode *n = NULL;
 
-        assert(p);
-
-        do {
+        while (p) {
                 n = c_rbnode_rebalance_one(p, n);
                 p = n ? c_rbnode_parent(n) : NULL;
-        } while (p);
+        }
 }
 
 /**
@@ -837,7 +835,6 @@ static inline void c_rbnode_rebalance(CRBNode *p) {
  * c_rbtree_unlink_init().
  */
 _public_ void c_rbnode_unlink(CRBNode *n) {
-        CRBNode *p, *s, *gc, *next = NULL;
         CRBTree *t;
 
         assert(n);
@@ -850,48 +847,48 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
          *    its parent.
          *  * The node has two children, in which case there is guaranteed to
          *    be a successor to the node (successor being the node ordered
-         *    directly after it). This successor cannot have two children by
-         *    itself (two interior nodes can never be successive). Therefore,
-         *    we can simply swap the node with its successor (including color)
-         *    and have reduced this case to either of the first two.
+         *    directly after it). This successor is the leftmost descendant of
+         *    the node's right child, so it cannot have a left child of its own.
+         *    Therefore, we can simply swap the node with its successor (including
+         *    color) and remove the node from its new place, which will be one of
+         *    the first two cases.
          *
          * Whenever the node we removed was black, we have to rebalance the
          * tree. Note that this affects the actual node we _remove_, not @n (in
          * case we swap it).
-         *
-         *      p: parent
-         *      s: successor
-         *      gc: grand-...-child
-         *      x: temporary
-         *      next: next node to rebalance on
          */
 
         if (!n->left) {
-                /*
-                 * Case 1:
-                 * The node has no left child. If it neither has a right child,
-                 * it is a leaf-node and we can simply unlink it. If it also
-                 * was black, we have to rebalance, as always if we remove a
-                 * black node.
-                 * But if the node has a right child, the child *must* be red
-                 * (otherwise, the right path has more black nodes as the
-                 * non-existing left path), and the node to be removed must
-                 * hence be black. We simply replace the node with its child,
-                 * turning the red child black, and thus no rebalancing is
-                 * required.
-                 */
-                t = c_rbnode_pop_root(n);
-                c_rbnode_swap_child(n, n->right);
-                if (n->right)
+                if (!n->right) {
+                        /* Case 1.0
+                         * The node has no children, it is a leaf-node and we
+                         * can simply unlink it. If it was also black, we have to
+                         * rebalance. */
+                        c_rbnode_push_root(NULL, c_rbnode_pop_root(n));
+                        c_rbnode_swap_child(n, NULL);
+
+                        if (c_rbnode_is_black(n))
+                                c_rbnode_rebalance(c_rbnode_parent(n));
+                } else {
+                        /*
+                         * Case 1.1:
+                         * The node has exactly one child, and it is on the right.
+                         * The child *must* be red (otherwise, the right path has
+                         * more black nodes than the non-existing left path), and
+                         * the node to be removed must hence be black. We simply
+                         * replace the node with its child, turning the red child
+                         * black, and thus no rebalancing is required.
+                         */
+                        t = c_rbnode_pop_root(n);
+                        c_rbnode_swap_child(n, n->right);
                         c_rbnode_set_parent_and_flags(n->right, c_rbnode_parent(n), c_rbnode_flags(n->right) & ~C_RBNODE_RED);
-                else
-                        next = c_rbnode_is_black(n) ? c_rbnode_parent(n) : NULL;
-                c_rbnode_push_root(n->right, t);
+                        c_rbnode_push_root(n->right, t);
+                }
         } else if (!n->right) {
                 /*
-                 * Case 1.1:
+                 * Case 1.2:
                  * The node has exactly one child, and it is on the left. Treat
-                 * it as mirrored case of Case 1 (i.e., replace the node by its
+                 * it as mirrored case of Case 1.1 (i.e., replace the node by its
                  * child).
                  */
                 t = c_rbnode_pop_root(n);
@@ -899,49 +896,82 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
                 c_rbnode_set_parent_and_flags(n->left, c_rbnode_parent(n), c_rbnode_flags(n->left) & ~C_RBNODE_RED);
                 c_rbnode_push_root(n->left, t);
         } else {
+                CRBNode *s, *p, *c, *next = NULL;
+
                 /*
                  * Case 2:
-                 * We are dealing with a full interior node with a child not on
-                 * both sides. Find its successor and swap it. Then remove the
-                 * node similar to Case 1. For performance reasons we don't
-                 * perform the full swap, but skip links that are about to be
-                 * removed, anyway.
+                 * We are dealing with a full interior node with a child on
+                 * both sides. We want to find its successor and swap it,
+                 * then remove the node similar to Case 1. For performance
+                 * reasons we don't perform the full swap, but skip links
+                 * that are about to be removed, anyway.
+                 *
+                 * First locate the successor, remember its child and the
+                 * parent the original node should have been linked on,
+                 * before being removed. Then link up both the successor's
+                 * new children and old child.
+                 *
+                 *      s: successor
+                 *      p: parent
+                 *      c: right (and only potential) child of successor
+                 *      red: color of
+                 *      next: next node to rebalance on
                  */
                 s = n->right;
                 if (!s->left) {
-                        /* right child is next, no need to touch grandchild */
+                        /* The immediate right child is the successor,
+                         * the successor's right child remains linked
+                         * as before. */
                         p = s;
-                        gc = s->right;
+                        c = s->right;
                 } else {
-                        /* find successor and swap partially */
                         s = c_rbnode_leftmost(s);
                         p = c_rbnode_parent(s);
+                        c = s->right;
 
-                        gc = s->right;
-                        c_rbtree_store(&p->left, gc);
+                        /* the new parent pointer of the successor's
+                         * child is set below */
+                        c_rbtree_store(&p->left, c);
+
                         c_rbtree_store(&s->right, n->right);
                         c_rbnode_set_parent_and_flags(n->right, s, c_rbnode_flags(n->right));
                 }
 
-                /* node is partially swapped, now remove as in Case 1 */
+                /* In both the above cases, the successor's left child
+                 * needs to be replaced with the left child of the node
+                 * that is being removed. */
                 c_rbtree_store(&s->left, n->left);
                 c_rbnode_set_parent_and_flags(n->left, s, c_rbnode_flags(n->left));
 
-                t = c_rbnode_pop_root(n);
-                c_rbnode_swap_child(n, s);
-                if (gc)
-                        c_rbnode_set_parent_and_flags(gc, p, c_rbnode_flags(gc) & ~C_RBNODE_RED);
+                /* As in cases 1.1 and 1.0 above, if successor was a
+                 * black leaf, we need to rebalance the tree, otherwise
+                 * it must have a red child, so simply recolor that black
+                 * and continue. Note that @next must be stored here, as
+                 * the original color of the successor is forgotten below. */
+                if (c)
+                        c_rbnode_set_parent_and_flags(c, p, c_rbnode_flags(c) & ~C_RBNODE_RED);
                 else
                         next = c_rbnode_is_black(s) ? p : NULL;
+
+                /* Update the successor, to inherit the parent and color
+                 * from the node being removed. */
                 if (c_rbnode_is_red(n))
                         c_rbnode_set_parent_and_flags(s, c_rbnode_parent(n), c_rbnode_flags(s) | C_RBNODE_RED);
                 else
                         c_rbnode_set_parent_and_flags(s, c_rbnode_parent(n), c_rbnode_flags(s) & ~C_RBNODE_RED);
-                c_rbnode_push_root(s, t);
-        }
 
-        if (next)
-                c_rbnode_rebalance(next);
+                /* Update the parent of the node being removed and
+                 * (potentially) the tree to point to successor
+                 * instead of the node being removed. Note that
+                 * this needs to happen after the parent of the
+                 * successor is set above, as that call would
+                 * clear the root pointer, if set. */
+                c_rbnode_swap_child(n, s);
+                c_rbnode_push_root(s, c_rbnode_pop_root(n));
+
+                if (next)
+                        c_rbnode_rebalance(next);
+        }
 }
 
 /**
