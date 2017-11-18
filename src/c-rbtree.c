@@ -502,8 +502,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBNode *n) {
                                         c_rbtree_store(&p->right, x);
                                         c_rbtree_store(&n->left, p);
                                         if (x)
-                                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
-                                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p) | C_RBNODE_RED);
+                                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x));
+                                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p));
                                         p = n;
                                 }
 
@@ -549,8 +549,8 @@ static inline CRBNode *c_rbtree_paint_one(CRBNode *n) {
                                         c_rbtree_store(&p->left, n->right);
                                         c_rbtree_store(&n->right, p);
                                         if (x)
-                                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x) & ~C_RBNODE_RED);
-                                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p) | C_RBNODE_RED);
+                                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x));
+                                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p));
                                         p = n;
                                 }
 
