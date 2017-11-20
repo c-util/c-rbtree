@@ -866,8 +866,9 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
                          * can simply unlink it. If it was also black, we have to
                          * rebalance.
                          */
-                        c_rbnode_push_root(NULL, c_rbnode_pop_root(n));
+                        t = c_rbnode_pop_root(n);
                         c_rbnode_swap_child(n, NULL);
+                        c_rbnode_push_root(NULL, t);
 
                         if (c_rbnode_is_black(n))
                                 c_rbnode_rebalance(c_rbnode_parent(n));
@@ -899,6 +900,9 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
                 c_rbnode_push_root(n->left, t);
         } else {
                 CRBNode *s, *p, *c, *next = NULL;
+
+                /* Cache possible tree-root during tree-rotations. */
+                t = c_rbnode_pop_root(n);
 
                 /*
                  * Case 2:
@@ -977,7 +981,9 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
                  * above, as that call would clear the root pointer, if set.
                  */
                 c_rbnode_swap_child(n, s);
-                c_rbnode_push_root(s, c_rbnode_pop_root(n));
+
+                /* Possibly restore saved tree-root. */
+                c_rbnode_push_root(s, t);
 
                 if (next)
                         c_rbnode_rebalance(next);
