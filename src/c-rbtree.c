@@ -916,7 +916,6 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
                  *      s: successor
                  *      p: parent
                  *      c: right (and only potential) child of successor
-                 *      red: color of
                  *      next: next node to rebalance on
                  */
                 s = n->right;
