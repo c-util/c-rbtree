@@ -20,5 +20,5 @@ local:
 LIBCRBTREE_2 {
 global:
         c_rbnode_link;
-        c_rbnode_unlink;
+        c_rbnode_unlink_stale;
 } LIBCRBTREE_1;

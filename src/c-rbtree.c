@@ -656,9 +656,9 @@ _public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
  * When you add nodes to a tree, the memory contents of the node do not matter.
  * That is, there is no need to initialize the node via c_rbnode_init().
  * However, if you relink nodes multiple times during their lifetime, it is
- * usually very convenient to use c_rbnode_init() and c_rbtree_remove_init().
- * In those cases, you should validate that a node is unlinked before you call
- * c_rbtree_add().
+ * usually very convenient to use c_rbnode_init() and c_rbnode_unlink() (rather
+ * than c_rbnode_unlink_stale()). In those cases, you should validate that a
+ * node is unlinked before you call c_rbtree_add().
  */
 _public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
         assert(t);
@@ -825,16 +825,16 @@ static inline void c_rbnode_rebalance(CRBNode *p) {
 }
 
 /**
- * c_rbnode_unlink() - remove node from tree
+ * c_rbnode_unlink_stale() - remove node from tree
  * @n:          node to remove
  *
  * This removes the given node from its tree. Once unlinked, the tree is
  * rebalanced.
  *
  * This does *NOT* reset @n to being unlinked. If you need this, use
- * c_rbtree_unlink_init().
+ * c_rbtree_unlink().
  */
-_public_ void c_rbnode_unlink(CRBNode *n) {
+_public_ void c_rbnode_unlink_stale(CRBNode *n) {
         CRBTree *t;
 
         assert(n);

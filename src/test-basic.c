@@ -167,7 +167,7 @@ static void test_shuffle(void) {
 
         /* remove all nodes (in different order) and validate on each round */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
-                c_rbnode_unlink(nodes[i]);
+                c_rbnode_unlink_stale(nodes[i]);
                 n = validate(&t);
                 assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
                 c_rbnode_init(nodes[i]);
@@ -192,7 +192,7 @@ static void test_shuffle(void) {
 
                 /* remove half of the nodes */
                 for (i = 0; i < sizeof(nodes) / sizeof(*nodes) / 2; ++i) {
-                        c_rbnode_unlink(nodes[i]);
+                        c_rbnode_unlink_stale(nodes[i]);
                         n = validate(&t);
                         assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
                         c_rbnode_init(nodes[i]);
@@ -214,7 +214,7 @@ static void test_shuffle(void) {
 
         /* remove all */
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
-                c_rbnode_unlink(nodes[i]);
+                c_rbnode_unlink_stale(nodes[i]);
                 n = validate(&t);
                 assert(n == sizeof(nodes) / sizeof(*nodes) - i - 1);
                 c_rbnode_init(nodes[i]);

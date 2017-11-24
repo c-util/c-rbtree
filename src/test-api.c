@@ -25,16 +25,7 @@ static void test_api(void) {
         assert(!c_rbnode_is_linked(&n));
         assert(!c_rbnode_entry(NULL, TestNode, rb));
 
-        /* init, is_linked, add, link, {{unlink,remove}{,_init}} */
-
-        c_rbtree_add(&t, NULL, &t.root, &n);
-        assert(c_rbnode_is_linked(&n));
-
-        c_rbnode_link(&n, &n.left, &m);
-        assert(c_rbnode_is_linked(&m));
-
-        c_rbnode_unlink_init(&m);
-        assert(!c_rbnode_is_linked(&m));
+        /* init, is_linked, add, link, {unlink{,_stale}} */
 
         c_rbtree_add(&t, NULL, &t.root, &n);
         assert(c_rbnode_is_linked(&n));
@@ -43,6 +34,15 @@ static void test_api(void) {
         assert(c_rbnode_is_linked(&m));
 
         c_rbnode_unlink(&m);
+        assert(!c_rbnode_is_linked(&m));
+
+        c_rbtree_add(&t, NULL, &t.root, &n);
+        assert(c_rbnode_is_linked(&n));
+
+        c_rbnode_link(&n, &n.left, &m);
+        assert(c_rbnode_is_linked(&m));
+
+        c_rbnode_unlink_stale(&m);
         assert(c_rbnode_is_linked(&m)); /* @m wasn't touched */
 
         c_rbnode_init(&n);

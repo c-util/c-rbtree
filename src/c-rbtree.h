@@ -77,7 +77,7 @@ CRBNode *c_rbnode_next_postorder(CRBNode *n);
 CRBNode *c_rbnode_prev_postorder(CRBNode *n);
 
 void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n);
-void c_rbnode_unlink(CRBNode *n);
+void c_rbnode_unlink_stale(CRBNode *n);
 
 /**
  * struct CRBTree - Red-Black Tree
@@ -168,9 +168,9 @@ static inline CRBNode *c_rbnode_parent(CRBNode *n) {
  *
  * Note that you must have either linked the node or initialized it, before
  * calling this function. Never call this function on uninitialized nodes.
- * Furthermore, removing a node via c_rbtree_remove() does *NOT* mark the node
- * as unlinked. You have to call c_rbnode_init() yourself after removal, or use
- * the c_rbtree_remove_init() helper.
+ * Furthermore, removing a node via c_rbnode_unlink_stale() does *NOT* mark the
+ * node as unlinked. You have to call c_rbnode_init() yourself after removal, or
+ * use the c_rbnode_unlink() helper.
  *
  * Return: true if the node is linked, false if not.
  */
@@ -179,17 +179,17 @@ static inline _Bool c_rbnode_is_linked(CRBNode *n) {
 }
 
 /**
- * c_rbnode_unlink_init() - safely remove node from tree and reinitialize it
+ * c_rbnode_unlink() - safely remove node from tree and reinitialize it
  * @n:          node to remove, or NULL
  *
- * This is almost the same as c_rbnode_unlink(), but extends it slightly, to be
+ * This is almost the same as c_rbnode_unlink_stale(), but extends it slightly, to be
  * more convenient to use in many cases:
  *  - if @n is unlinked or NULL, this is a no-op
  *  - @n is reinitialized after being removed
  */
-static inline void c_rbnode_unlink_init(CRBNode *n) {
+static inline void c_rbnode_unlink(CRBNode *n) {
         if (c_rbnode_is_linked(n)) {
-                c_rbnode_unlink(n);
+                c_rbnode_unlink_stale(n);
                 c_rbnode_init(n);
         }
 }

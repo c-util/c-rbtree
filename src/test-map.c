@@ -188,7 +188,7 @@ static void test_map(void) {
                 assert(c_rbnode_is_linked(&nodes[i]->rb));
                 assert(nodes[i] == c_rbtree_find_entry(&t, test_compare, (void *)nodes[i]->key, Node, rb));
 
-                c_rbnode_unlink_init(&nodes[i]->rb);
+                c_rbnode_unlink(&nodes[i]->rb);
 
                 assert(!c_rbnode_is_linked(&nodes[i]->rb));
                 assert(!c_rbtree_find_entry(&t, test_compare, (void *)nodes[i]->key, Node, rb));
@@ -206,7 +206,7 @@ static void test_map(void) {
         i = 0;
         c_rbtree_for_each_safe(p, safe_p, &t) {
                 ++i;
-                c_rbnode_unlink_init(p);
+                c_rbnode_unlink(p);
         }
         assert(i == sizeof(nodes) / sizeof(*nodes));
         assert(c_rbtree_is_empty(&t));
@@ -222,7 +222,7 @@ static void test_map(void) {
         i = 0;
         c_rbtree_for_each_entry_safe(n, safe_n, &t, rb) {
                 ++i;
-                c_rbnode_unlink_init(&n->rb);
+                c_rbnode_unlink(&n->rb);
         }
         assert(i == sizeof(nodes) / sizeof(*nodes));
         assert(c_rbtree_is_empty(&t));
