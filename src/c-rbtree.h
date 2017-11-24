@@ -101,7 +101,6 @@ CRBNode *c_rbtree_first_postorder(CRBTree *t);
 CRBNode *c_rbtree_last_postorder(CRBTree *t);
 
 void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n);
-void c_rbtree_remove(CRBTree *t, CRBNode *n);
 
 /**
  * c_rbnode_init() - mark a node as unlinked
@@ -217,25 +216,6 @@ static inline void c_rbtree_init(CRBTree *t) {
  */
 static inline _Bool c_rbtree_is_empty(CRBTree *t) {
         return !t->root;
-}
-
-/**
- * c_rbtree_remove_init() - safely remove node and reinitialize (DEPRECATED)
- * @t:          tree to operate on
- * @n:          node to remove, or NULL
- *
- * DEPRECATED: Use c_rbnode_unlink_init().
- *
- * This is almost the same as c_rbtree_remove(), but extends it slightly, to be
- * more convenient to use in many cases:
- *  - if @n is unlinked or NULL, this is a no-op
- *  - @n is reinitialized after being removed
- */
-static inline void c_rbtree_remove_init(CRBTree *t, CRBNode *n) {
-        if (c_rbnode_is_linked(n)) {
-                c_rbtree_remove(t, n);
-                c_rbnode_init(n);
-        }
 }
 
 /**

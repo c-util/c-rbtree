@@ -989,23 +989,3 @@ _public_ void c_rbnode_unlink(CRBNode *n) {
                         c_rbnode_rebalance(next);
         }
 }
-
-/**
- * c_rbtree_remove() - remove node from tree (DEPRECATED)
- * @t:          tree to operate on
- * @n:          node to remove
- *
- * DEPRECATED: Use c_rbnode_unlink() instead.
- *
- * This removes the given node from its tree. Once unlinked, the tree is
- * rebalanced.
- * The caller *must* ensure that the given tree is actually the tree it is
- * linked on. Otherwise, behavior is undefined.
- *
- * This does *NOT* reset @n to being unlinked (for performance reason, this
- * function *never* modifies @n at all). If you need this, use
- * c_rbtree_remove_init().
- */
-_public_ void c_rbtree_remove(CRBTree *t, CRBNode *n) {
-        c_rbnode_unlink(n);
-}
