@@ -439,143 +439,192 @@ static inline void c_rbnode_swap_child(CRBNode *old, CRBNode *new) {
         }
 }
 
-static inline CRBNode *c_rbtree_paint_one(CRBNode *n) {
-        CRBNode *p, *g, *gg, *u, *x;
+static inline void c_rbtree_paint_terminal(CRBNode *n) {
+        CRBNode *p, *g, *gg, *x;
         CRBTree *t;
 
         /*
-         * Paint a single node according to RB-Tree rules. The node must
-         * already be linked into the tree and painted red.
-         * We repaint the node or rotate the tree, if required. In case a
-         * recursive repaint is required, the next node to be re-painted
-         * is returned.
-         *      p: parent
-         *      g: grandparent
-         *      gg: grandgrandparent
-         *      u: uncle
-         *      x: temporary
+         * Case 4:
+         * This path assumes @n is red, @p is red, but the uncle is unset or
+         * black. This implies @g exists and is black.
+         *
+         * This case requires up to 2 rotations to restore the tree invariants.
+         * That is, it runs in O(1) time and fully restores the RB-Tree
+         * invariants, all at the cost of performing at mots 2 rotations.
          */
 
         p = c_rbnode_parent(n);
-        if (!p) {
-                /* Case 1:
-                 * We reached the root. Mark it black and be done. As all
-                 * leaf-paths share the root, the ratio of black nodes on each
-                 * path stays the same. */
-                c_rbnode_set_parent_and_flags(n, c_rbnode_raw(n), c_rbnode_flags(n) & ~C_RBNODE_RED);
-                return NULL;
-        } else if (c_rbnode_is_black(p)) {
-                /* Case 2:
-                 * The parent is already black. As our node is red, we did not
-                 * change the number of black nodes on any path, nor do we have
-                 * multiple consecutive red nodes. */
-                return NULL;
-        } else { /* parent is red, so grandparent exists and is black */
-                g = c_rbnode_parent(p);
-                gg = c_rbnode_parent(g);
+        g = c_rbnode_parent(p);
+        gg = c_rbnode_parent(g);
 
-                if (p == g->left) {
-                        u = g->right;
+        assert(c_rbnode_is_red(p));
+        assert(c_rbnode_is_black(g));
+        assert(p == g->left || !g->left || c_rbnode_is_black(g->left));
+        assert(p == g->right || !g->right || c_rbnode_is_black(g->right));
 
-                        if (u && c_rbnode_is_red(u)) {
-                                /* Case 3:
-                                 * Parent and uncle are both red, and grandparent is
-                                 * black. Repaint parent and uncle black, the grandparent
-                                 * red and recurse into the grandparent. Note that this,
-                                 * and the mirrored case below, is the only recursive case. */
-                                c_rbnode_set_parent_and_flags(p, g, c_rbnode_flags(p) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(u, g, c_rbnode_flags(u) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(g, c_rbnode_raw(g), c_rbnode_flags(g) | C_RBNODE_RED);
-                                return g;
-                        } else {
-                                /* parent is red, uncle is black */
-
-                                if (n == p->right) {
-                                        /* Case 4:
-                                         * We're the right red child of a red parent, which is
-                                         * a left child. Rotate on parent and consider us to be
-                                         * the old parent and the old parent to be us, making us
-                                         * the left child instead of the right child so we can
-                                         * handle it the same as case 5. Rotating two red nodes
-                                         * changes none of the invariants. */
-                                        x = n->left;
-                                        c_rbtree_store(&p->right, x);
-                                        c_rbtree_store(&n->left, p);
-                                        if (x)
-                                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x));
-                                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p));
-                                        p = n;
-                                }
-
-                                /* 'n' is invalid from here on! */
-
-                                /* Case 5:
-                                 * We're the red left child of a red parent, black
-                                 * grandparent and uncle. Rotate parent on grandparent
-                                 * and switch their colors, making the parent black and
-                                 * the grandparent red. The root of this subtree was changed
-                                 * from the grandparent to the parent, but the color remained
-                                 * black, so the number of black nodes on each path stays the
-                                 * same. However, we got rid of the double red path as we are
-                                 * still the (red) child of the parent, which has now turned
-                                 * black. Note that had we been the right child, rather than
-                                 * the left child, we would now be the left child of the old
-                                 * grandparent, and we would still have a double red path. As
-                                 * the new grandparent remains black, we're done. */
-                                x = p->right;
-                                t = c_rbnode_pop_root(g);
-                                c_rbtree_store(&g->left, x);
-                                c_rbtree_store(&p->right, g);
-                                c_rbnode_swap_child(g, p);
-                                if (x)
-                                        c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
-                                c_rbnode_push_root(p, t);
-
-                                return NULL;
-                        }
-                } else /* if (p == g->right) */ { /* same as above, but mirrored */
-                        u = g->left;
-
-                        if (u && c_rbnode_is_red(u)) {
-                                c_rbnode_set_parent_and_flags(p, g, c_rbnode_flags(p) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(u, g, c_rbnode_flags(u) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(g, c_rbnode_raw(g), c_rbnode_flags(g) | C_RBNODE_RED);
-                                return g;
-                        } else {
-                                if (n == p->left) {
-                                        x = n->right;
-                                        c_rbtree_store(&p->left, n->right);
-                                        c_rbtree_store(&n->right, p);
-                                        if (x)
-                                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x));
-                                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p));
-                                        p = n;
-                                }
-
-                                x = p->left;
-                                t = c_rbnode_pop_root(g);
-                                c_rbtree_store(&g->right, x);
-                                c_rbtree_store(&p->left, g);
-                                c_rbnode_swap_child(g, p);
-                                if (x)
-                                        c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
-                                c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
-                                c_rbnode_push_root(p, t);
-
-                                return NULL;
-                        }
+        if (p == g->left) {
+                if (n == p->right) {
+                        /*
+                         * We're the right red child of a red parent, which is
+                         * a left child. Rotate on parent and consider us to be
+                         * the old parent and the old parent to be us, making us
+                         * the left child instead of the right child so we can
+                         * handle it the same as below. Rotating two red nodes
+                         * changes none of the invariants.
+                         */
+                        x = n->left;
+                        c_rbtree_store(&p->right, x);
+                        c_rbtree_store(&n->left, p);
+                        if (x)
+                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x));
+                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p));
+                        p = n;
                 }
+
+                /* 'n' is invalid from here on! */
+
+                /*
+                 * We're the red left child of a red parent, black grandparent
+                 * and uncle. Rotate parent on grandparent and switch their
+                 * colors, making the parent black and the grandparent red. The
+                 * root of this subtree was changed from the grandparent to the
+                 * parent, but the color remained black, so the number of black
+                 * nodes on each path stays the same. However, we got rid of
+                 * the double red path as we are still the (red) child of the
+                 * parent, which has now turned black. Note that had we been
+                 * the right child, rather than the left child, we would now be
+                 * the left child of the old grandparent, and we would still
+                 * have a double red path. As the new grandparent remains
+                 * black, we're done.
+                 */
+                x = p->right;
+                t = c_rbnode_pop_root(g);
+                c_rbtree_store(&g->left, x);
+                c_rbtree_store(&p->right, g);
+                c_rbnode_swap_child(g, p);
+                if (x)
+                        c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
+                c_rbnode_push_root(p, t);
+        } else /* if (p == g->right) */ { /* same as above, but mirrored */
+                if (n == p->left) {
+                        x = n->right;
+                        c_rbtree_store(&p->left, n->right);
+                        c_rbtree_store(&n->right, p);
+                        if (x)
+                                c_rbnode_set_parent_and_flags(x, p, c_rbnode_flags(x));
+                        c_rbnode_set_parent_and_flags(p, n, c_rbnode_flags(p));
+                        p = n;
+                }
+
+                x = p->left;
+                t = c_rbnode_pop_root(g);
+                c_rbtree_store(&g->right, x);
+                c_rbtree_store(&p->left, g);
+                c_rbnode_swap_child(g, p);
+                if (x)
+                        c_rbnode_set_parent_and_flags(x, g, c_rbnode_flags(x) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(p, gg, c_rbnode_flags(p) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(g, p, c_rbnode_flags(g) | C_RBNODE_RED);
+                c_rbnode_push_root(p, t);
+        }
+}
+
+static inline CRBNode *c_rbtree_paint_path(CRBNode *n) {
+        CRBNode *p, *g, *u;
+
+        for (;;) {
+                p = c_rbnode_parent(n);
+                if (!p) {
+                        /*
+                         * Case 1:
+                         * We reached the root. Mark it black and be done. As
+                         * all leaf-paths share the root, the ratio of black
+                         * nodes on each path stays the same.
+                         */
+                        c_rbnode_set_parent_and_flags(n, c_rbnode_raw(n), c_rbnode_flags(n) & ~C_RBNODE_RED);
+                        return NULL;
+                } else if (c_rbnode_is_black(p)) {
+                        /*
+                         * Case 2:
+                         * The parent is already black. As our node is red, we
+                         * did not change the number of black nodes on any
+                         * path, nor do we have multiple consecutive red nodes.
+                         * There is nothing to be done.
+                         */
+                        return NULL;
+                }
+
+                g = c_rbnode_parent(p);
+                u = (p == g->left) ? g->right : g->left;
+                if (!u || !c_rbnode_is_red(u)) {
+                        /*
+                         * Case 4:
+                         * The parent is red, but its uncle is black. By
+                         * rotating the parent above the uncle, we distribute
+                         * the red nodes and thus restore the tree invariants.
+                         * No recursive fixup will be needed afterwards. Hence,
+                         * just let the caller know about @n and make them do
+                         * the rotations.
+                         */
+                        return n;
+                }
+
+                /*
+                 * Case 3:
+                 * Parent and uncle are both red, and grandparent is black.
+                 * Repaint parent and uncle black, the grandparent red and
+                 * recurse into the grandparent. Note that this is the only
+                 * recursive case. That is, this step restores the tree
+                 * invariants for the sub-tree below @p (including @n), but
+                 * needs to continue the re-coloring two levels up.
+                 */
+                c_rbnode_set_parent_and_flags(p, g, c_rbnode_flags(p) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(u, g, c_rbnode_flags(u) & ~C_RBNODE_RED);
+                c_rbnode_set_parent_and_flags(g, c_rbnode_raw(g), c_rbnode_flags(g) | C_RBNODE_RED);
+                n = g;
         }
 }
 
 static inline void c_rbtree_paint(CRBNode *n) {
-        assert(n);
-
-        while (n)
-                n = c_rbtree_paint_one(n);
+        /*
+         * When a new node is inserted into an RB-Tree, we always link it as a
+         * tail-node and paint it red. This way, the node will not violate the
+         * rb-tree invariants regarding the number of black nodes on all paths.
+         *
+         * However, a red node must never have another bordering red-node (ie.,
+         * child or parent). Since the node is newly linked, it does not have
+         * any children. Therefore, all we need to do is fix the path upwards
+         * through all parents until we hit a black parent or can otherwise fix
+         * the coloring.
+         *
+         * This function first walks up the path from @n towards the tree root
+         * (done in c_rbtree_paint_path()). This recolors its parent/uncle, if
+         * possible, until it hits a sub-tree that cannot be fixed via
+         * re-coloring. After c_rbtree_paint_path() returns, there are two
+         * possible outcomes:
+         *
+         *         1) @n is NULL, in which case the tree invariants were
+         *            restored by mere recoloring. Nothing is to be done.
+         *
+         *         2) @n is non-NULL, but points to a red ancestor of the
+         *            original node. In this case we need to restore the tree
+         *            invariants via a simple left or right rotation. This will
+         *            be done by c_rbtree_paint_terminal().
+         *
+         * As a summary, this function runs O(log(n)) re-coloring operations in
+         * the worst case, followed by O(1) rotations as final restoration. The
+         * amortized cost, however, is O(1), since re-coloring only recurses
+         * upwards if it hits a red uncle (which can only happen if a previous
+         * operation terminated its operation on that layer).
+         * While amortized painting of inserted nodes is O(1), finding the
+         * correct spot to link the node (before painting it) still requires a
+         * search in the binary tree in O(log(n)).
+         */
+        n = c_rbtree_paint_path(n);
+        if (n)
+                c_rbtree_paint_terminal(n);
 }
 
 /**
