@@ -728,26 +728,19 @@ _public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
         c_rbtree_paint(n);
 }
 
-static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
+static inline void c_rbnode_rebalance_terminal(CRBNode *p, CRBNode *previous) {
         CRBNode *s, *x, *y, *g;
         CRBTree *t;
 
-        /*
-         * Rebalance tree after a node was removed. This happens only if you
-         * remove a black node and one path is now left with an unbalanced
-         * number or black nodes.
-         * This function assumes all paths through p and n have one black node
-         * less than all other paths. If recursive fixup is required, the
-         * current node is returned.
-         */
-
-        if (n == p->left) {
+        if (previous == p->left) {
                 s = p->right;
                 if (c_rbnode_is_red(s)) {
-                        /* Case 3:
+                        /*
+                         * Case 2:
                          * We have a red node as sibling. Rotate it onto our
                          * side so we can later on turn it black. This way, we
-                         * gain the additional black node in our path. */
+                         * gain the additional black node in our path.
+                         */
                         t = c_rbnode_pop_root(p);
                         g = c_rbnode_parent(p);
                         x = s->left;
@@ -765,24 +758,26 @@ static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
                 if (!x || c_rbnode_is_black(x)) {
                         y = s->left;
                         if (!y || c_rbnode_is_black(y)) {
-                                /* Case 4:
+                                /*
+                                 * Case 3+4:
                                  * Our sibling is black and has only black
                                  * children. Flip it red and turn parent black.
-                                 * This way we gained a black node in our path,
-                                 * or we fix it recursively one layer up, which
-                                 * will rotate the red sibling as parent. */
+                                 * This way we gained a black node in our path.
+                                 * Note that the parent must be red, otherwise
+                                 * it must have been handled by our caller.
+                                 */
+                                assert(c_rbnode_is_red(p));
                                 c_rbnode_set_parent_and_flags(s, p, c_rbnode_flags(s) | C_RBNODE_RED);
-                                if (c_rbnode_is_black(p))
-                                        return p;
-
                                 c_rbnode_set_parent_and_flags(p, c_rbnode_parent(p), c_rbnode_flags(p) & ~C_RBNODE_RED);
-                                return NULL;
+                                return;
                         }
 
-                        /* Case 5:
+                        /*
+                         * Case 5:
                          * Left child of our sibling is red, right one is black.
                          * Rotate on parent so the right child of our sibling is
-                         * now red, and we can fall through to case 6. */
+                         * now red, and we can fall through to case 6.
+                         */
                         x = y->right;
                         c_rbtree_store(&s->left, y->right);
                         c_rbtree_store(&y->right, s);
@@ -793,10 +788,12 @@ static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
                         s = y;
                 }
 
-                /* Case 6:
+                /*
+                 * Case 6:
                  * The right child of our sibling is red. Rotate left and flip
                  * colors, which gains us an additional black node in our path,
-                 * that was previously on our sibling. */
+                 * that was previously on our sibling.
+                 */
                 t = c_rbnode_pop_root(p);
                 g = c_rbnode_parent(p);
                 y = s->left;
@@ -809,7 +806,7 @@ static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
                 c_rbnode_set_parent_and_flags(s, g, c_rbnode_flags(p));
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
                 c_rbnode_push_root(s, t);
-        } else /* if (n == p->right) */ { /* same as above, but mirrored */
+        } else /* if (previous == p->right) */ { /* same as above, but mirrored */
                 s = p->left;
                 if (c_rbnode_is_red(s)) {
                         t = c_rbnode_pop_root(p);
@@ -829,12 +826,10 @@ static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
                 if (!x || c_rbnode_is_black(x)) {
                         y = s->right;
                         if (!y || c_rbnode_is_black(y)) {
+                                assert(c_rbnode_is_red(p));
                                 c_rbnode_set_parent_and_flags(s, p, c_rbnode_flags(s) | C_RBNODE_RED);
-                                if (c_rbnode_is_black(p))
-                                        return p;
-
                                 c_rbnode_set_parent_and_flags(p, c_rbnode_parent(p), c_rbnode_flags(p) & ~C_RBNODE_RED);
-                                return NULL;
+                                return;
                         }
 
                         x = y->left;
@@ -860,17 +855,72 @@ static inline CRBNode *c_rbnode_rebalance_one(CRBNode *p, CRBNode *n) {
                 c_rbnode_set_parent_and_flags(p, s, c_rbnode_flags(p) & ~C_RBNODE_RED);
                 c_rbnode_push_root(s, t);
         }
+}
+
+static inline CRBNode *c_rbnode_rebalance_path(CRBNode *p, CRBNode **previous) {
+        CRBNode *s, *nl, *nr;
+
+        while (p) {
+                s = (*previous == p->left) ? p->right : p->left;
+                nl = s->left;
+                nr = s->right;
+
+                /*
+                 * If the sibling under @p is black and exclusively has black
+                 * children itself (i.e., nephews/nieces in @nl/@nr), then we
+                 * can easily re-color to fix this sub-tree, and continue one
+                 * layer up. However, if that's not the case, we have tree
+                 * rotations at our hands to move one of the black nodes into
+                 * our path, then turning the red node black to fully restore
+                 * the RB-Tree invariants again. This fixup will be done by the
+                 * caller, so we just let them know where to do that.
+                 */
+                if (c_rbnode_is_red(s) ||
+                    (nl && c_rbnode_is_red(nl)) ||
+                    (nr && c_rbnode_is_red(nr)))
+                        return p;
+
+                /*
+                 * Case 3+4:
+                 * Sibling is black, and all nephews/nieces are black. Flip
+                 * sibling red. This way the sibling lost a black node in its
+                 * path, thus getting even with our path. However, paths not
+                 * going through @p haven't been fixed up, hence we proceed
+                 * recursively one layer up.
+                 * Before we continue one layer up, there are two possible
+                 * terminations: If the parent is red, we can turn it black.
+                 * This terminates the rebalancing, since the entire point of
+                 * rebalancing is that everything below @p has one black node
+                 * less than everything else. Lastly, if there is no layer
+                 * above, we hit the tree root and nothing is left to be done.
+                 */
+                c_rbnode_set_parent_and_flags(s, p, c_rbnode_flags(s) | C_RBNODE_RED);
+                if (c_rbnode_is_red(p)) {
+                        c_rbnode_set_parent_and_flags(p, c_rbnode_parent(p), c_rbnode_flags(p) & ~C_RBNODE_RED);
+                        return NULL;
+                }
+
+                *previous = p;
+                p = c_rbnode_parent(p);
+        }
 
         return NULL;
 }
 
-static inline void c_rbnode_rebalance(CRBNode *p) {
-        CRBNode *n = NULL;
+static inline void c_rbnode_rebalance(CRBNode *n) {
+        CRBNode *previous = NULL;
 
-        while (p) {
-                n = c_rbnode_rebalance_one(p, n);
-                p = n ? c_rbnode_parent(n) : NULL;
-        }
+        /*
+         * Rebalance a tree after a node was removed. This function must be
+         * called on the parent of the leaf that was removed. It will first
+         * perform a recursive re-coloring on the parents of @n, until it
+         * either hits the tree-root, or a condition where a tree-rotation is
+         * needed to restore the RB-Tree invariants.
+         */
+
+        n = c_rbnode_rebalance_path(n, &previous);
+        if (n)
+                c_rbnode_rebalance_terminal(n, previous);
 }
 
 /**
@@ -907,54 +957,53 @@ _public_ void c_rbnode_unlink_stale(CRBNode *n) {
          * case we swap it).
          */
 
-        if (!n->left) {
-                if (!n->right) {
-                        /*
-                         * Case 1.0
-                         * The node has no children, it is a leaf-node and we
-                         * can simply unlink it. If it was also black, we have to
-                         * rebalance.
-                         */
-                        t = c_rbnode_pop_root(n);
-                        c_rbnode_swap_child(n, NULL);
-                        c_rbnode_push_root(NULL, t);
+        if (!n->left && !n->right) {
+                /*
+                 * Case 1.0
+                 * The node has no children, it is a leaf-node and we
+                 * can simply unlink it. If it was also black, we have
+                 * to rebalance.
+                 */
+                t = c_rbnode_pop_root(n);
+                c_rbnode_swap_child(n, NULL);
+                c_rbnode_push_root(NULL, t);
 
-                        if (c_rbnode_is_black(n))
-                                c_rbnode_rebalance(c_rbnode_parent(n));
-                } else {
-                        /*
-                         * Case 1.1:
-                         * The node has exactly one child, and it is on the right.
-                         * The child *must* be red (otherwise, the right path has
-                         * more black nodes than the non-existing left path), and
-                         * the node to be removed must hence be black. We simply
-                         * replace the node with its child, turning the red child
-                         * black, and thus no rebalancing is required.
-                         */
-                        t = c_rbnode_pop_root(n);
-                        c_rbnode_swap_child(n, n->right);
-                        c_rbnode_set_parent_and_flags(n->right, c_rbnode_parent(n), c_rbnode_flags(n->right) & ~C_RBNODE_RED);
-                        c_rbnode_push_root(n->right, t);
-                }
-        } else if (!n->right) {
+                if (c_rbnode_is_black(n))
+                        c_rbnode_rebalance(c_rbnode_parent(n));
+        } else if (!n->left && n->right) {
+                /*
+                 * Case 1.1:
+                 * The node has exactly one child, and it is on the
+                 * right. The child *must* be red (otherwise, the right
+                 * path has more black nodes than the non-existing left
+                 * path), and the node to be removed must hence be
+                 * black. We simply replace the node with its child,
+                 * turning the red child black, and thus no rebalancing
+                 * is required.
+                 */
+                t = c_rbnode_pop_root(n);
+                c_rbnode_swap_child(n, n->right);
+                c_rbnode_set_parent_and_flags(n->right, c_rbnode_parent(n), c_rbnode_flags(n->right) & ~C_RBNODE_RED);
+                c_rbnode_push_root(n->right, t);
+        } else if (n->left && !n->right) {
                 /*
                  * Case 1.2:
                  * The node has exactly one child, and it is on the left. Treat
-                 * it as mirrored case of Case 1.1 (i.e., replace the node by its
-                 * child).
+                 * it as mirrored case of Case 1.1 (i.e., replace the node by
+                 * its child).
                  */
                 t = c_rbnode_pop_root(n);
                 c_rbnode_swap_child(n, n->left);
                 c_rbnode_set_parent_and_flags(n->left, c_rbnode_parent(n), c_rbnode_flags(n->left) & ~C_RBNODE_RED);
                 c_rbnode_push_root(n->left, t);
-        } else {
+        } else /* if (n->left && n->right) */ {
                 CRBNode *s, *p, *c, *next = NULL;
 
                 /* Cache possible tree-root during tree-rotations. */
                 t = c_rbnode_pop_root(n);
 
                 /*
-                 * Case 2:
+                 * Case 1.3:
                  * We are dealing with a full interior node with a child on
                  * both sides. We want to find its successor and swap it,
                  * then remove the node similar to Case 1. For performance
