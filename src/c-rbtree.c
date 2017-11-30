@@ -38,6 +38,8 @@
  */
 static_assert(alignof(CRBNode) <= alignof(max_align_t), "Invalid RBNode alignment");
 static_assert(alignof(CRBNode) >= 8, "Invalid CRBNode alignment");
+static_assert(alignof(CRBTree) <= alignof(max_align_t), "Invalid RBTree alignment");
+static_assert(alignof(CRBTree) >= 8, "Invalid CRBTree alignment");
 
 /**
  * c_rbnode_leftmost() - return leftmost child

@@ -90,7 +90,7 @@ void c_rbnode_unlink_stale(CRBNode *n);
  * To initialize an RB-Tree, set it to NULL / all zero.
  */
 struct CRBTree {
-        CRBNode *root;
+        alignas(8) CRBNode *root;
 };
 
 #define C_RBTREE_INIT {}
