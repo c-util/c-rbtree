@@ -59,6 +59,9 @@ test('Basic API Behavior', test_basic)
 test_map = executable('test-map', ['test-map.c'], link_with: libcrbtree_private)
 test('Generic Map', test_map)
 
+test_misc = executable('test-misc', ['test-misc.c'], link_with: libcrbtree_private)
+test('Miscellaneous', test_misc)
+
 test_parallel = executable('test-parallel', ['test-parallel.c'], link_with: libcrbtree_private)
 test('Lockless Parallel Readers', test_parallel)
 

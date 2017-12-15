@@ -15,6 +15,7 @@ global:
         c_rbtree_first_postorder;
         c_rbtree_last_postorder;
         c_rbtree_add;
+        c_rbtree_move;
 local:
        *;
 };

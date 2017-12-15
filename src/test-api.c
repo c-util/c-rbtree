@@ -17,7 +17,7 @@ typedef struct TestNode {
 } TestNode;
 
 static void test_api(void) {
-        CRBTree t = C_RBTREE_INIT;
+        CRBTree t = C_RBTREE_INIT, t2 = C_RBTREE_INIT;
         CRBNode *i, *is, n = C_RBNODE_INIT(n), m = C_RBNODE_INIT(m);
         TestNode *ie, *ies;
 
@@ -53,6 +53,10 @@ static void test_api(void) {
 
         c_rbtree_init(&t);
         assert(c_rbtree_is_empty(&t));
+
+        /* move */
+
+        c_rbtree_move(&t2, &t);
 
         /* first, last, leftmost, rightmost, next, prev */
 

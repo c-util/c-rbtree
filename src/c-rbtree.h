@@ -100,6 +100,7 @@ CRBNode *c_rbtree_last(CRBTree *t);
 CRBNode *c_rbtree_first_postorder(CRBTree *t);
 CRBNode *c_rbtree_last_postorder(CRBTree *t);
 
+void c_rbtree_move(CRBTree *to, CRBTree *from);
 void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n);
 
 /**

@@ -441,6 +441,33 @@ static inline void c_rbnode_swap_child(CRBNode *old, CRBNode *new) {
         }
 }
 
+/**
+ * c_rbtree_move() - move tree
+ * @to:         destination tree
+ * @from:       source tree
+ *
+ * This imports the entire tree from @from into @to. @to must be empty! @from
+ * will be empty afterwards.
+ *
+ * Note that this operates in O(1) time. Only the root-entry is updated to
+ * point to the new tree-root.
+ */
+_public_ void c_rbtree_move(CRBTree *to, CRBTree *from) {
+        CRBTree *t;
+
+        assert(!to->root);
+
+        if (from->root) {
+                t = c_rbnode_pop_root(from->root);
+                assert(t == from);
+
+                to->root = from->root;
+                from->root = NULL;
+
+                c_rbnode_push_root(to->root, to);
+        }
+}
+
 static inline void c_rbtree_paint_terminal(CRBNode *n) {
         CRBNode *p, *g, *gg, *x;
         CRBTree *t;
