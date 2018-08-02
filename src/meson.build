@@ -31,7 +31,7 @@ libcrbtree_shared = shared_library(
 libcrbtree_dep = declare_dependency(
         include_directories: include_directories('.'),
         link_with: libcrbtree_private,
-        version: meson.project_version()
+        version: meson.project_version(),
 )
 
 if not meson.is_subproject()
@@ -42,7 +42,7 @@ if not meson.is_subproject()
                 version: meson.project_version(),
                 name: 'libcrbtree',
                 filebase: 'libcrbtree',
-                description: 'Standalone Red-Black Tree Implementation',
+                description: project_description,
         )
 endif
 
@@ -53,17 +53,17 @@ endif
 test_api = executable('test-api', ['test-api.c'], link_with: libcrbtree_shared)
 test('API Symbol Visibility', test_api)
 
-test_basic = executable('test-basic', ['test-basic.c'], link_with: libcrbtree_private)
+test_basic = executable('test-basic', ['test-basic.c'], dependencies: libcrbtree_dep)
 test('Basic API Behavior', test_basic)
 
-test_map = executable('test-map', ['test-map.c'], link_with: libcrbtree_private)
+test_map = executable('test-map', ['test-map.c'], dependencies: libcrbtree_dep)
 test('Generic Map', test_map)
 
-test_misc = executable('test-misc', ['test-misc.c'], link_with: libcrbtree_private)
+test_misc = executable('test-misc', ['test-misc.c'], dependencies: libcrbtree_dep)
 test('Miscellaneous', test_misc)
 
-test_parallel = executable('test-parallel', ['test-parallel.c'], link_with: libcrbtree_private)
+test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
 test('Lockless Parallel Readers', test_parallel)
 
-test_posix = executable('test-posix', ['test-posix.c'], link_with: libcrbtree_private)
+test_posix = executable('test-posix', ['test-posix.c'], dependencies: libcrbtree_dep)
 test('Posix tsearch(3p) Comparison', test_posix)
