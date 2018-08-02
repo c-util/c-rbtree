@@ -284,6 +284,15 @@ static int test_parallel(void) {
 
                         /* step child */
                         r = ptrace(PTRACE_SINGLESTEP, pid, 0, 0);
+
+                        /*
+                         * Some architectures (e.g., armv7hl) do not implement
+                         * SINGLESTEP, but return EIO. Skip the entire test in
+                         * this case.
+                         */
+                        if (r < 0 && errno == EIO)
+                                return 77;
+
                         assert(r >= 0);
                         break;
 
