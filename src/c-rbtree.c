@@ -31,15 +31,15 @@
 #include "c-rbtree-private.h"
 
 /*
- * We use alignas(8) to enforce 64bit alignment of structure fields. This is
+ * We use alignas() to enforce at least 32 bit alignment of structure fields. This is
  * according to ISO-C11, so we rely on the compiler to implement this. However,
  * at the same time we don't want to exceed native malloc() alignment on target
  * platforms. Hence, we also verify against max_align_t.
  */
 static_assert(alignof(CRBNode) <= alignof(max_align_t), "Invalid RBNode alignment");
-static_assert(alignof(CRBNode) >= 8, "Invalid CRBNode alignment");
+static_assert(alignof(CRBNode) >= 4, "Invalid CRBNode alignment");
 static_assert(alignof(CRBTree) <= alignof(max_align_t), "Invalid RBTree alignment");
-static_assert(alignof(CRBTree) >= 8, "Invalid CRBTree alignment");
+static_assert(alignof(CRBTree) >= 4, "Invalid CRBTree alignment");
 
 /**
  * c_rbnode_leftmost() - return leftmost child
@@ -363,8 +363,8 @@ static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
  * applied. But since both fields share its backing memory, this helper
  * function is provided.
  */
-static inline void c_rbnode_set_parent_and_flags(CRBNode *n, CRBNode *p, unsigned long flags) {
-        n->__parent_and_flags = (unsigned long)p | flags;
+static inline void c_rbnode_set_parent_and_flags(CRBNode *n, CRBNode *p, uintptr_t flags) {
+        n->__parent_and_flags = ((uintptr_t)(void *)p) | flags;
 }
 
 /*
@@ -403,7 +403,7 @@ static inline CRBTree *c_rbnode_pop_root(CRBNode *n) {
 static inline CRBTree *c_rbnode_push_root(CRBNode *n, CRBTree *t) {
         if (t) {
                 if (n)
-                        n->__parent_and_flags = (unsigned long)t
+                        n->__parent_and_flags = ((uintptr_t)(void *)t)
                                                 | c_rbnode_flags(n)
                                                 | C_RBNODE_ROOT;
                 c_rbtree_store(&t->root, n);

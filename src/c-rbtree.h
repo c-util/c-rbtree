@@ -29,15 +29,15 @@ extern "C" {
 #include <assert.h>
 #include <stdalign.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct CRBNode CRBNode;
 typedef struct CRBTree CRBTree;
 
 /* implementation detail */
-#define C_RBNODE_RED                    (0x1UL)
-#define C_RBNODE_ROOT                   (0x2UL)
-#define C_RBNODE_UNUSED3                (0x4UL)
-#define C_RBNODE_FLAG_MASK              (0x7UL)
+#define C_RBNODE_RED                    ((uintptr_t)0x1U)
+#define C_RBNODE_ROOT                   ((uintptr_t)0x2U)
+#define C_RBNODE_FLAG_MASK              ((uintptr_t)0x3U)
 
 /**
  * struct CRBNode - Node of a Red-Black Tree
@@ -60,12 +60,12 @@ typedef struct CRBTree CRBTree;
  * C_RBNODE_INIT.
  */
 struct CRBNode {
-        alignas(8) unsigned long __parent_and_flags;
+        alignas(sizeof(uintptr_t) > 4 ? sizeof(uintptr_t) : 4) uintptr_t __parent_and_flags;
         CRBNode *left;
         CRBNode *right;
 };
 
-#define C_RBNODE_INIT(_var) { .__parent_and_flags = (unsigned long)&(_var) }
+#define C_RBNODE_INIT(_var) { .__parent_and_flags = ((uintptr_t)(void *)&(_var)) }
 
 CRBNode *c_rbnode_leftmost(CRBNode *n);
 CRBNode *c_rbnode_rightmost(CRBNode *n);
@@ -90,7 +90,7 @@ void c_rbnode_unlink_stale(CRBNode *n);
  * To initialize an RB-Tree, set it to NULL / all zero.
  */
 struct CRBTree {
-        alignas(8) CRBNode *root;
+        alignas(sizeof(uintptr_t) > 4 ? sizeof(uintptr_t) : 4) CRBNode *root;
 };
 
 #define C_RBTREE_INIT {}
