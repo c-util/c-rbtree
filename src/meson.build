@@ -19,12 +19,12 @@ libcrbtree_both = both_libraries(
         ],
         dependencies: libcrbtree_deps,
         install: not meson.is_subproject(),
-        soversion: 0,
         link_args: [
                 '-Wl,--no-undefined',
                 '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
         ],
         link_depends: libcrbtree_symfile,
+        soversion: 0,
 )
 
 libcrbtree_dep = declare_dependency(
