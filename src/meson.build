@@ -9,7 +9,7 @@ libcrbtree_deps = [
 ]
 
 libcrbtree_both = both_libraries(
-        'crbtree',
+        'crbtree-'+major,
         [
                 'c-rbtree.c',
         ],
@@ -39,7 +39,7 @@ if not meson.is_subproject()
 
         mod_pkgconfig.generate(
                 description: project_description,
-                filebase: 'libcrbtree',
+                filebase: 'libcrbtree-'+major,
                 libraries: libcrbtree_both.get_shared_lib(),
                 name: 'libcrbtree',
                 version: meson.project_version(),

@@ -1,19 +1,21 @@
 project(
         'c-rbtree',
         'c',
-        version: '3',
-        license: 'Apache',
         default_options: [
                 'c_std=c11'
         ],
+        license: 'Apache',
+        version: '3.0.0',
 )
+major = meson.project_version().split('.')[0]
 project_description = 'Intrusive Red-Black Tree Collection'
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
 mod_pkgconfig = import('pkgconfig')
 
-sub_cstdaux = subproject('c-stdaux')
-
-dep_cstdaux = sub_cstdaux.get_variable('libcstdaux_dep')
+dep_cstdaux = dependency('libcstdaux-1')
+add_project_arguments(dep_cstdaux.get_variable('cflags').split(' '), language: 'c')
 
 subdir('src')
+
+meson.override_dependency('libcrbtree-'+major, libcrbtree_dep, static: true)
