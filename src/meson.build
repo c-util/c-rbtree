@@ -62,8 +62,10 @@ test('Generic Map', test_map)
 test_misc = executable('test-misc', ['test-misc.c'], dependencies: libcrbtree_dep)
 test('Miscellaneous', test_misc)
 
-test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
-test('Lockless Parallel Readers', test_parallel)
+if use_ptrace
+        test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
+        test('Lockless Parallel Readers', test_parallel)
+endif
 
 test_posix = executable('test-posix', ['test-posix.c'], dependencies: libcrbtree_dep)
 test('Posix tsearch(3p) Comparison', test_posix)
