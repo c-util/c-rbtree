@@ -10,7 +10,6 @@ project(
 major = meson.project_version().split('.')[0]
 project_description = 'Intrusive Red-Black Tree Collection'
 
-add_project_arguments('-D_GNU_SOURCE', language: 'c')
 mod_pkgconfig = import('pkgconfig')
 use_ptrace = get_option('ptrace')
 
