@@ -62,8 +62,8 @@ test('Generic Map', test_map)
 test_misc = executable('test-misc', ['test-misc.c'], dependencies: libcrbtree_dep)
 test('Miscellaneous', test_misc)
 
+test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
 if use_ptrace
-        test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
         test('Lockless Parallel Readers', test_parallel)
 endif
 
