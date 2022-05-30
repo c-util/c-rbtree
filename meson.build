@@ -17,6 +17,8 @@ use_ptrace = get_option('ptrace')
 dep_cstdaux = dependency('libcstdaux-1')
 add_project_arguments(dep_cstdaux.get_variable('cflags').split(' '), language: 'c')
 
+use_noundefined = meson.get_compiler('c').has_link_argument('-Wl,--no-undefined')
+
 subdir('src')
 
 meson.override_dependency('libcrbtree-'+major, libcrbtree_dep, static: true)
