@@ -10,7 +10,6 @@ libcrbtree_deps = [
 
 if use_noundefined
         libcrbtree_lflags = [
-                '-Wl,--no-undefined',
                 '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
         ]
 else
