@@ -8,14 +8,6 @@ libcrbtree_deps = [
         dep_cstdaux,
 ]
 
-if use_noundefined
-        libcrbtree_lflags = [
-                '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
-        ]
-else
-        libcrbtree_lflags = []
-endif
-
 libcrbtree_both = both_libraries(
         'crbtree-'+major,
         [
@@ -27,7 +19,9 @@ libcrbtree_both = both_libraries(
         ],
         dependencies: libcrbtree_deps,
         install: not meson.is_subproject(),
-        link_args: libcrbtree_lflags,
+        link_args: dep_cstdaux.get_variable('version-scripts') == 'yes' ? [
+                '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
+        ] : [],
         link_depends: libcrbtree_symfile,
         soversion: 0,
 )
