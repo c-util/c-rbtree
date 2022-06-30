@@ -44,6 +44,16 @@ typedef struct CRBTree CRBTree;
 #define C_RBNODE_FLAG_MASK              (0x3UL)
 
 /**
+ * DOC: Tree Structure
+ *
+ * The tree structure of c-rbtree is directly exposed in its API. Callers are
+ * allowed to access the node and tree structures directly to traverse the
+ * tree. Tree modifications, however, should be performed via the functions
+ * provided by the library.
+ */
+/**/
+
+/**
  * struct CRBNode - Node of a Red-Black Tree
  *
  * Each node in an RB-Tree must embed a :c:struct:`CRBNode` object. This object
@@ -260,6 +270,16 @@ static inline void c_rbtree_init(CRBTree *t) {
 static inline _Bool c_rbtree_is_empty(CRBTree *t) {
         return !t->root;
 }
+
+/**
+ * DOC: Search
+ *
+ * While the API supports direct traversal via the open-coded structures, it
+ * can be cumbersome to use at times. If you, instead, provide a callback to
+ * compare entries in the tree, you can use the following helpers to search the
+ * tree for specific entries, or slots to insert new entries.
+ */
+/**/
 
 /**
  * CRBCompareFunc - Function type to compare a node to a key

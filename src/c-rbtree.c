@@ -58,6 +58,15 @@ static_assert(alignof(CRBTree) <= C_RBTREE_MAX_ALIGN, "Invalid RBTree alignment"
 static_assert(alignof(CRBTree) >= 4, "Invalid CRBTree alignment");
 
 /**
+ * DOC: Traversal
+ *
+ * If you prefer open-coding the tree traversal over the built-in iterators,
+ * c-rbtree provides a set of helpers to find starting position and end nodes
+ * for different kind of tree traversals.
+ */
+/**/
+
+/**
  * c_rbnode_leftmost() - Return leftmost child
  * @n:          Current node, or NULL
  *
@@ -367,6 +376,15 @@ _c_public_ CRBNode *c_rbtree_last_postorder(CRBTree *t) {
         c_assert(t);
         return t->root;
 }
+
+/**
+ * DOC: Tree Modification
+ *
+ * Insertion into and removal from an RB-Tree require rebalancing to make sure
+ * the tree stays balanced. The following functions ensure the tree integrity
+ * is kept.
+ */
+/**/
 
 static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
         /*
