@@ -32,3 +32,10 @@ jobs:
       cabuild_ref: "v1"
       linux: false
       macos: true
+
+  ci-docs:
+    name: Documentation CI
+    uses: bus1/cabuild/.github/workflows/ci-sphinx.yml@v1
+    with:
+      meson: true
+      source: "./src/docs"
