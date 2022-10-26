@@ -31,6 +31,7 @@ extensions = [
 # Hawkmoth Options
 
 cautodoc_clang = capidocs.kerneldoc.hawkmoth_include_args()
+cautodoc_clang += ["-I" + os.path.abspath("..")]
 cautodoc_clang += capidocs.kerneldoc.hawkmoth_glob_includes("../../subprojects", "libc*/src")
 
 cautodoc_root = os.path.abspath('..')
