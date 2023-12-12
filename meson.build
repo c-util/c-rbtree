@@ -14,7 +14,7 @@ project_description = 'Intrusive Red-Black Tree Collection'
 mod_pkgconfig = import('pkgconfig')
 use_ptrace = get_option('ptrace')
 
-dep_cstdaux = dependency('libcstdaux-1')
+dep_cstdaux = dependency('libcstdaux-1', version: '>=1.5.0')
 add_project_arguments(dep_cstdaux.get_variable('cflags').split(' '), language: 'c')
 
 subdir('src')
