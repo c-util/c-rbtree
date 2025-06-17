@@ -25,8 +25,8 @@ capidocs.kerneldoc.hawkmoth_conf()
 exclude_patterns = []
 
 extensions = [
+    'capidocs.kerneldoc',
     'hawkmoth',
-    'hawkmoth.ext.transformations',
 ]
 
 # Hawkmoth Options
@@ -36,10 +36,6 @@ hawkmoth_clang += ["-I" + os.path.abspath("..")]
 hawkmoth_clang += capidocs.kerneldoc.hawkmoth_glob_includes("../../subprojects", "libc*/src")
 
 hawkmoth_root = os.path.abspath('..')
-
-cautodoc_transformations = {
-    'kerneldoc': capidocs.kerneldoc.hawkmoth_converter,
-}
 
 # HTML Options
 
