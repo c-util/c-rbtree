@@ -74,7 +74,7 @@ static void shuffle(Node **nodes, size_t n_memb) {
 }
 
 static int compare(CRBTree *t, void *k, CRBNode *n) {
-        int key = (int)(unsigned long)k;
+        int key = (int)(uintptr_t)k;
         Node *node = node_from_rb(n);
 
         return key - node->key;
@@ -189,7 +189,7 @@ static void test_posix(void) {
         /* add all nodes, and verify that each node is linked */
         ts = now();
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i) {
-                slot = c_rbtree_find_slot(&t, compare, (void *)(unsigned long)nodes[i]->key, &p);
+                slot = c_rbtree_find_slot(&t, compare, (void *)(uintptr_t)nodes[i]->key, &p);
                 c_assert(slot);
                 c_rbtree_add(&t, p, slot, &nodes[i]->rb);
         }
@@ -227,7 +227,7 @@ static void test_posix(void) {
         ts = now();
         for (i = 0; i < sizeof(nodes) / sizeof(*nodes); ++i)
                 c_assert(nodes[i] == c_rbtree_find_entry(&t, compare,
-                                                       (void *)(unsigned long)nodes[i]->key,
+                                                       (void *)(uintptr_t)nodes[i]->key,
                                                        Node, rb));
         ts_c3 = now() - ts;
 

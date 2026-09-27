@@ -18,7 +18,7 @@ static inline void *c_rbnode_raw(CRBNode *n) {
         return (void *)(n->__parent_and_flags & ~C_RBNODE_FLAG_MASK);
 }
 
-static inline unsigned long c_rbnode_flags(CRBNode *n) {
+static inline uintptr_t c_rbnode_flags(CRBNode *n) {
         return n->__parent_and_flags & C_RBNODE_FLAG_MASK;
 }
 

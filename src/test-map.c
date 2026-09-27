@@ -15,7 +15,7 @@
 #include "c-rbtree-private.h"
 
 typedef struct {
-        unsigned long key;
+        uintptr_t key;
         unsigned int marker;
         CRBNode rb;
 } Node;
@@ -23,7 +23,7 @@ typedef struct {
 #define node_from_rb(_rb) ((Node *)((char *)(_rb) - offsetof(Node, rb)))
 
 static int test_compare(CRBTree *t, void *k, CRBNode *n) {
-        unsigned long key = (unsigned long)k;
+        uintptr_t key = (uintptr_t)k;
         Node *node = node_from_rb(n);
 
         return (key < node->key) ? -1 : (key > node->key) ? 1 : 0;

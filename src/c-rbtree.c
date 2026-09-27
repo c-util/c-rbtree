@@ -406,8 +406,8 @@ static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
  * applied. But since both fields share its backing memory, this helper
  * function is provided.
  */
-static inline void c_rbnode_set_parent_and_flags(CRBNode *n, CRBNode *p, unsigned long flags) {
-        n->__parent_and_flags = (unsigned long)p | flags;
+static inline void c_rbnode_set_parent_and_flags(CRBNode *n, CRBNode *p, uintptr_t flags) {
+        n->__parent_and_flags = (uintptr_t)p | flags;
 }
 
 /*
@@ -446,7 +446,7 @@ static inline CRBTree *c_rbnode_pop_root(CRBNode *n) {
 static inline CRBTree *c_rbnode_push_root(CRBNode *n, CRBTree *t) {
         if (t) {
                 if (n)
-                        n->__parent_and_flags = (unsigned long)t
+                        n->__parent_and_flags = (uintptr_t)t
                                                 | c_rbnode_flags(n)
                                                 | C_RBNODE_ROOT;
                 c_rbtree_store(&t->root, n);

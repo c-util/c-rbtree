@@ -34,14 +34,15 @@ extern "C" {
 #include <assert.h>
 #include <stdalign.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct CRBNode CRBNode;
 typedef struct CRBTree CRBTree;
 
 /* implementation detail */
-#define C_RBNODE_RED                    (0x1UL)
-#define C_RBNODE_ROOT                   (0x2UL)
-#define C_RBNODE_FLAG_MASK              (0x3UL)
+#define C_RBNODE_RED                    ((uintptr_t)0x1)
+#define C_RBNODE_ROOT                   ((uintptr_t)0x2)
+#define C_RBNODE_FLAG_MASK              ((uintptr_t)0x3)
 
 /**
  * DOC: Tree Structure
@@ -74,7 +75,7 @@ struct CRBNode {
         /* Anonymous union for alignment guarantees */
         union {
                 /* Internal state encoding the parent pointer and state */
-                unsigned long __parent_and_flags;
+                uintptr_t __parent_and_flags;
                 /* enforce >=4-byte alignment for @__parent_and_flags */
                 alignas(4) unsigned char __align_dummy;
         };
@@ -93,7 +94,7 @@ struct CRBNode {
  *
  * Return: Evaluates to the initializer for `_var`.
  */
-#define C_RBNODE_INIT(_var) { .__parent_and_flags = (unsigned long)&(_var) }
+#define C_RBNODE_INIT(_var) { .__parent_and_flags = (uintptr_t)&(_var) }
 
 CRBNode *c_rbnode_leftmost(CRBNode *n);
 CRBNode *c_rbnode_rightmost(CRBNode *n);
@@ -187,7 +188,7 @@ static inline void c_rbnode_init(CRBNode *n) {
          *       it uses the possibly odd style of                              \
          *       `(x ?: offsetof(...)) - offsetof(...))`.                       \
          */                                                                     \
-        ((_t *)(void *)(((unsigned long)(void *)(_what) ?:                      \
+        ((_t *)(void *)(((uintptr_t)(void *)(_what) ?:                          \
                          offsetof(_t, _m)) - offsetof(_t, _m)))
 
 /**
